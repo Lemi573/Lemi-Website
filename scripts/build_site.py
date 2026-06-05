@@ -237,7 +237,7 @@ def load_projects() -> list[Project]:
     return projects
 
 
-def page(title: str, body: str, active: str = "") -> str:
+def page(title: str, body: str, active: str = "", body_class: str = "") -> str:
     nav = [
         ("About", "/", "about"),
         ("Projects", "/projects/", "projects"),
@@ -254,10 +254,10 @@ def page(title: str, body: str, active: str = "") -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)} | Lemi Hadarau</title>
   <meta name="description" content="Architectural portfolio of Lemi Hadarau, Architect based in Ireland.">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=gallery-light-1">
-  <script src="/assets/js/site.js" defer></script>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=lightbox-thumbs-1">
+  <script src="/assets/js/site.js?v=lightbox-thumbs-1" defer></script>
 </head>
-<body>
+<body{f' class="{html.escape(body_class)}"' if body_class else ''}>
   <header class="site-header">
     <a class="brand" href="/">Lemi Hadarau</a>
     <nav aria-label="Main navigation">{nav_html}</nav>
@@ -444,7 +444,8 @@ def build_project(project: Project, previous_project: Project | None, next_proje
   {prev_next}
 </article>
 """
-    write(ROOT / "projects" / project.category_slug / project.slug / "index.html", page(project.display_name, body, active="projects"))
+    body_class = "lightbox-thumbs-prototype" if project.category_slug == "commercial" else ""
+    write(ROOT / "projects" / project.category_slug / project.slug / "index.html", page(project.display_name, body, active="projects", body_class=body_class))
 
 
 def build_projects_index(projects: list[Project]) -> None:

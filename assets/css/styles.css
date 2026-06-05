@@ -466,13 +466,24 @@ dd {
   display: flex;
 }
 
-.lightbox img {
+.lightbox > img {
   max-width: min(92vw, 1600px);
   max-height: 86vh;
   object-fit: contain;
 }
 
-.lightbox button {
+.lightbox-image-fade {
+  opacity: 1;
+  transition: opacity 240ms ease;
+}
+
+.lightbox-image-fade.is-changing {
+  opacity: 0;
+}
+
+.lightbox-close,
+.lightbox-prev,
+.lightbox-next {
   position: fixed;
   cursor: pointer;
   background: #fff;
@@ -492,6 +503,70 @@ dd {
 
 .lightbox-next {
   right: 24px;
+}
+
+.lightbox-thumbs-prototype .lightbox.open {
+  flex-direction: column;
+  gap: 20px;
+  padding: 72px 80px 44px;
+  box-sizing: border-box;
+}
+
+.lightbox-thumbs-prototype .lightbox > img {
+  max-height: calc(100vh - 190px);
+}
+
+.lightbox-thumbs {
+  position: static;
+  z-index: 102;
+  display: none;
+  max-width: min(860px, calc(100vw - 140px));
+  gap: 12px;
+  overflow-x: auto;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(8px);
+  scrollbar-width: none;
+}
+
+.lightbox-thumbs::-webkit-scrollbar {
+  display: none;
+}
+
+.lightbox-thumbs-prototype .lightbox.open .lightbox-thumbs {
+  display: flex;
+}
+
+.lightbox-thumb {
+  flex: 0 0 78px;
+  width: 78px;
+  height: 54px;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.lightbox-thumb img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+  display: block;
+}
+
+.lightbox-thumb.active {
+  border-color: #cfcfcf;
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.lightbox-thumb:hover,
+.lightbox-thumb:focus-visible {
+  opacity: 0.82;
 }
 
 @media (max-width: 920px) {

@@ -47,9 +47,20 @@ document.querySelectorAll(".gallery-grid").forEach((gallery) => {
 function openLightbox(items, index) {
   const lightbox = document.querySelector(".lightbox");
   const image = lightbox.querySelector("img");
+  const useThumbs = document.body.classList.contains("lightbox-thumbs-prototype");
   let current = index;
 
   function render() {
+    if (useThumbs) {
+      image.classList.add("lightbox-image-fade", "is-changing");
+      window.setTimeout(() => {
+        image.src = items[current].src;
+        image.alt = items[current].alt;
+        updateThumbs();
+        image.classList.remove("is-changing");
+      }, 150);
+      return;
+    }
     image.src = items[current].src;
     image.alt = items[current].alt;
   }
@@ -58,6 +69,7 @@ function openLightbox(items, index) {
     lightbox.classList.remove("open");
     lightbox.setAttribute("aria-hidden", "true");
     image.removeAttribute("src");
+    lightbox.querySelector(".lightbox-thumbs")?.remove();
     document.removeEventListener("keydown", onKeydown);
   }
 
@@ -72,11 +84,44 @@ function openLightbox(items, index) {
     if (event.key === "ArrowRight") move(1);
   }
 
+  function buildThumbs() {
+    if (!useThumbs) return;
+    lightbox.querySelector(".lightbox-thumbs")?.remove();
+    const thumbs = document.createElement("div");
+    thumbs.className = "lightbox-thumbs";
+    items.forEach((item, index) => {
+      const button = document.createElement("button");
+      button.className = "lightbox-thumb";
+      button.type = "button";
+      button.setAttribute("aria-label", `View image ${index + 1}`);
+      button.innerHTML = `<img src="${item.src}" alt="">`;
+      button.addEventListener("click", () => {
+        current = index;
+        render();
+      });
+      thumbs.appendChild(button);
+    });
+    lightbox.appendChild(thumbs);
+    updateThumbs();
+  }
+
+  function updateThumbs() {
+    if (!useThumbs) return;
+    const thumbs = [...lightbox.querySelectorAll(".lightbox-thumb")];
+    thumbs.forEach((thumb, index) => {
+      thumb.classList.toggle("active", index === current);
+      if (index === current) {
+        thumb.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }
+    });
+  }
+
   lightbox.querySelector(".lightbox-close").onclick = close;
   lightbox.querySelector(".lightbox-prev").onclick = () => move(-1);
   lightbox.querySelector(".lightbox-next").onclick = () => move(1);
   lightbox.classList.add("open");
   lightbox.setAttribute("aria-hidden", "false");
   document.addEventListener("keydown", onKeydown);
+  buildThumbs();
   render();
 }
