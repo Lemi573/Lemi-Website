@@ -254,7 +254,7 @@ def page(title: str, body: str, active: str = "") -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)} | Lemi Hadarau</title>
   <meta name="description" content="Architectural portfolio of Lemi Hadarau, Architect based in Ireland.">
-  <link rel="stylesheet" href="/assets/css/styles.css">
+  <link rel="stylesheet" href="/assets/css/styles.css?v=gallery-light-1">
   <script src="/assets/js/site.js" defer></script>
 </head>
 <body>
