@@ -22,6 +22,28 @@ document.addEventListener("click", (event) => {
   }
 });
 
+const hero = document.querySelector(".project-hero img");
+if (hero && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  const updateHeroMotion = () => {
+    const progress = Math.min(Math.max(window.scrollY / 520, 0), 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    document.documentElement.style.setProperty("--hero-scale", (1 - eased * 0.045).toFixed(4));
+    document.documentElement.style.setProperty("--hero-shift", `${Math.round(eased * -14)}px`);
+    document.documentElement.style.setProperty("--hero-radius", `${Math.round(eased * 2)}px`);
+  };
+  updateHeroMotion();
+  window.addEventListener("scroll", updateHeroMotion, { passive: true });
+}
+
+document.querySelectorAll(".gallery-grid").forEach((gallery) => {
+  gallery.addEventListener("wheel", (event) => {
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+    if (gallery.scrollWidth <= gallery.clientWidth) return;
+    event.preventDefault();
+    gallery.scrollBy({ left: event.deltaY * 0.9, behavior: "smooth" });
+  }, { passive: false });
+});
+
 function openLightbox(items, index) {
   const lightbox = document.querySelector(".lightbox");
   const image = lightbox.querySelector("img");
