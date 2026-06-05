@@ -243,12 +243,14 @@ h2 {
   display: grid;
   grid-template-columns: 1fr;
   gap: 28px;
-  padding: 34px clamp(22px, 4vw, 56px) 70px;
+  width: min(var(--max), calc(100vw - 44px));
+  margin: 0 auto;
+  padding: 34px 0 70px;
 }
 
 .project-hero img {
   width: 100%;
-  max-height: 78vh;
+  max-height: 72vh;
   object-fit: cover;
 }
 
