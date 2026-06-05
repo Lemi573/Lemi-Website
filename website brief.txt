@@ -1,0 +1,358 @@
+Website Brief
+
+Create a clean, minimal architectural portfolio website for Lemi Hadarau, an Architect based in Dublin, Ireland.
+
+The website should be a file-based portfolio website, so projects can be added, edited or removed later by changing folders and text files. Do not create an admin panel at this stage.
+
+The website should feel like a professional architectural portfolio: simple, image-led, mature, well-spaced and easy to navigate.
+
+Main Folder Structure
+
+The main content folders are:
+
+1 About
+2 CV
+3 Projects
+4 Contact
+
+The homepage should also act as the About page.
+
+Navigation
+
+Use this navigation:
+
+About
+Projects
+CV
+Contact
+
+The About link should bring the user to the homepage / landing page.
+
+Do not create a separate About page unless absolutely necessary.
+
+Homepage / About Page
+
+The homepage should include:
+
+* name: Lemi Hadarau
+* short professional introduction
+* short summary of experience
+* link to Projects
+* link to CV
+* selected featured projects (projects to be chosen for the featured section will be confirmed later)
+* contact link
+
+The homepage should feel like a landing page and About page combined. It should not feel like a long biography page. Keep it clean, visual and professional.
+
+Project Categories
+
+Inside the Projects folder, project categories are organised as:
+
+1 Commercial
+2 Retail
+3 Office Fit Out
+4 Public
+5 Residential
+
+Each category folder contains numbered project folders.
+
+The number at the start of each category or project folder controls the display order on the website. Do not show the leading numbers on the website.
+
+Example folder:
+
+1 18135 (Lexus Toyota Naas)
+
+Display name:
+
+Lexus Toyota Naas
+
+The project name written in brackets should be used as the display name.
+
+Project Folder Structure
+
+Each project folder may contain:
+
+* project information text file
+* cover image
+* Drawings folder
+* Photos folder
+* Visualisations folder
+* Photomontages folder
+* design iteration folders inside Visualisations, where relevant
+
+Not every project has every folder. The website should handle missing folders without errors.
+
+Project Information
+
+Each project folder includes a project information text file. Use this file to create the project page content.
+
+The project page should show:
+
+* Project Title
+* Location
+* Year
+* Role
+* Stage
+* Contribution
+* Description
+* Key Responsibilities
+
+The project card should show only:
+
+* cover image
+* project title
+
+Keep project cards minimal. Do not show long descriptions on project cards.
+
+Project Ordering
+
+Use the number at the start of each folder name to control display order.
+
+Example:
+
+1 Commercial
+2 Retail
+3 Office Fit Out
+4 Public
+5 Residential
+
+Within each category:
+
+1 Project Name
+2 Project Name
+3 Project Name
+
+Do not display the leading number on the website.
+
+Cover Images
+
+Each project has a cover image in the root of the project folder.
+
+Use the cover image as:
+
+* project card thumbnail
+* project page hero image
+
+The cover image may be JPG, JPEG, PNG or WEBP.
+
+Image Galleries
+
+Each project page should include image galleries if the relevant folders exist.
+
+Suggested order on the project page:
+
+1. Cover / hero image
+2. Project information
+3. Short Description
+4. Design Process section, if design iteration folders exist
+5. Visualisations / Photomontages
+6. Photos
+7. Drawings
+8. Key Responsibilities
+
+Drawings should be shown cleanly and responsively. Avoid cropping important drawing content. Clicking an image should open a larger view/lightbox which can be clicked to cycle through images left and right.
+
+Design Iterations
+
+Some projects include multiple design iteration folders inside the Visualisations folder.
+
+Example:
+
+Visualisations
+Design Iteration 1
+Design Iteration 2
+Design Iteration 3
+
+If these folders exist, create a separate section called:
+
+Design Process
+
+This section should show the design iterations clearly and separately from the normal image gallery.
+
+Use the folder names as section headings, for example:
+
+Design Iteration 1
+Design Iteration 2
+Design Iteration 3
+
+The purpose of this section is to show how the design developed over time.
+
+Do not mix design iteration images randomly into the normal gallery.
+
+A good layout would be:
+
+* stacked sections with clear headings
+* or tabs
+* or side-by-side comparison
+* or horizontal image groups
+
+Keep this section clean and architectural. It should feel like a design process presentation, not a random gallery.
+
+Projects Page
+
+Create a main Projects page with category filters:
+
+All
+Commercial
+Retail
+Office Fit Out
+Public
+Residential
+
+For all section, all projects to appear. If clicked/selected one section, only projects from that section to be shown. 
+
+Each project should appear as a clean image-led project card.
+
+Project Card Design
+
+Project cards should be minimal and image-led.
+
+Default desktop state:
+
+* show the project cover image
+* keep the card clean and simple
+* avoid too much text
+* use a clean grid layout
+* allow generous spacing between cards
+
+Hover state on desktop:
+
+* apply a subtle blur and/or dim effect to the cover image
+* show the project title over the image
+* use a smooth transition
+* keep the effect elegant and minimal, not flashy
+
+Suggested hover behaviour:
+
+* image subtly blurs and darkens
+* project title fades in centred over the image
+* cursor changes to pointer
+
+Mobile / tablet behaviour:
+
+Since hover does not work reliably on mobile and tablet, always show the project title centred below the image or as a simple overlay.
+
+Individual Project Pages
+
+Each individual project page should include:
+
+* large hero image
+* project title
+* key project information
+* contribution line
+* description
+* image galleries
+* design process section if applicable
+* key responsibilities
+* previous / next project navigation if possible
+
+The project page should not feel too text-heavy. Images should lead the page, with text supporting the project.
+
+CV Page
+
+Create a clean CV page using the CV content provided in the CV folder.
+
+This section will be updated further. 
+
+Contact Page
+
+Create a simple contact page with:
+
+* email
+* LinkedIn
+* short contact text
+* a short contact box where people can write an send me an email, if possible. 
+
+Design Direction
+
+The website should feel like a professional architectural portfolio.
+
+Design style:
+
+* minimal
+* clean
+* image-led
+* generous spacing
+* simple navigation
+* strong typography hierarchy
+* white background
+* black/dark grey text
+* subtle grey lines/dividers
+* no heavy colours
+* no decorative effects
+* no flashy animations
+
+Typography
+
+Use Helvetica only throughout the website.
+
+Use this font stack:
+
+Helvetica Neue, Helvetica, Arial, sans-serif
+
+Do not use Google Fonts or decorative fonts.
+
+Create clear font hierarchy using only:
+
+* font size
+* font weight/bold
+* spacing
+* alignment
+
+The website should feel simple, mature, professional and architectural.
+
+Responsiveness
+
+The website must work well on:
+
+* desktop
+* laptop
+* tablet
+* mobile
+
+On mobile:
+
+* project cards should stack cleanly
+* project titles should remain visible
+* image galleries should be easy to view
+* navigation should be simple and clear
+
+Confidentiality
+
+Only use the images and project text provided in the project folders.
+
+If drawings are shown, treat them as portfolio images, not downloadable construction documents.
+
+Do not create download links for drawings unless specifically requested.
+
+Technical Requirements
+
+Build the website so that projects are generated from the folder/file structure rather than hardcoded manually.
+
+It should be easy to add a new project later by:
+
+1. copying an existing project folder
+2. renaming it with a number and project name
+3. replacing the project information text file
+4. adding a cover image
+5. adding Drawings, Photos, Visualisations or Photomontages folders where needed
+
+Include a README file explaining how to:
+
+* add a project
+* remove a project
+* change project order
+* change a cover image
+* add photos
+* add drawings
+* add visualisations
+* add design iteration folders
+* update text content
+* run the website locally
+* publish/deploy the website
+
+Preferred Result
+
+A clean, modern, static architectural portfolio website that is easy to maintain using project folders and text files.
+
+The website should feel curated and professional, not like a database. The homepage and project cards should be visual and minimal, while individual project pages can contain more detail where needed.

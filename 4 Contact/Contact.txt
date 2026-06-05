@@ -1,0 +1,85 @@
+Contact Page
+
+Create a simple Contact page with direct contact details only.
+
+The Contact page should include:
+
+* Email: [lemuel_marius@yahoo.com](mailto:lemuel_marius@yahoo.com)
+* Phone: 085 221 8018
+* Location: Ratoath, Co. Meath
+* LinkedIn: https://www.linkedin.com/in/lemi-hadarau-b8780a15a/
+
+Contact Text
+
+Use a short and simple contact message:
+
+For professional enquiries or opportunities, please contact me by email or phone.
+
+Email Link Behaviour
+
+Make the email address clickable using a standard mailto link.
+
+Display the email as:
+
+[lemuel_marius@yahoo.com](mailto:lemuel_marius@yahoo.com)
+
+Use this mailto link:
+
+mailto:lemuel_marius@yahoo.com?subject=Portfolio%20Enquiry
+
+Phone Link Behaviour
+
+Make the phone number clickable, especially for mobile users.
+
+Display the phone number as:
+
+085 221 8018
+
+Use this telephone link:
+
+tel:+353852218018
+
+LinkedIn Link
+
+Display the LinkedIn link simply as:
+
+LinkedIn
+
+Open the LinkedIn link in a new browser tab.
+
+Use this URL:
+
+https://www.linkedin.com/in/lemi-hadarau-b8780a15a/
+
+Layout
+
+Create a clean rectangular contact information section/card.
+
+The contact card should include:
+
+* short contact text
+* email
+* phone
+* location
+* LinkedIn link
+
+Keep the page minimal and professional.
+
+Suggested layout:
+
+* Page title: Contact
+* Short contact sentence underneath
+* Contact card below with clear individual lines for Email, Phone, Location and LinkedIn
+
+Design to match the rest of website. 
+
+Use:
+
+* white background
+* black/dark grey text
+* thin grey border around the contact card
+* generous spacing
+* Helvetica only and bold
+* simple hover effect on email, phone and LinkedIn links
+* no icons unless they are very minimal and consistent with the website design
+
