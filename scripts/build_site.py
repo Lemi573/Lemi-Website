@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECTS_ROOT = ROOT / "3 Projects"
 ABOUT_ROOT = ROOT / "1 About"
 CONTACT_FILE = ROOT / "4 Contact" / "Contact.txt"
-CV_PDF = ROOT / "2 CV" / "Lemi_Hadarau_CV.pdf"
+CV_FILE = ROOT / "2 CV" / "Lemi_Hadarau_CV.docx"
 GENERATED_ASSETS = ROOT / "assets" / "generated"
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
@@ -254,8 +254,8 @@ def page(title: str, body: str, active: str = "", body_class: str = "") -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)} | Lemi Hadarau</title>
   <meta name="description" content="Architectural portfolio of Lemi Hadarau, Architect based in Ireland.">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=lightbox-thumbs-1">
-  <script src="/assets/js/site.js?v=lightbox-thumbs-1" defer></script>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=cv-refine-8">
+  <script src="/assets/js/site.js?v=cv-refine-8" defer></script>
 </head>
 <body{f' class="{html.escape(body_class)}"' if body_class else ''}>
   <header class="site-header">
@@ -471,35 +471,201 @@ def build_projects_index(projects: list[Project]) -> None:
 
 def extract_cv_text() -> str:
     try:
+        if CV_FILE.suffix.lower() == ".docx":
+            from docx import Document
+
+            document = Document(str(CV_FILE))
+            lines: list[str] = []
+            for paragraph in document.paragraphs:
+                lines.extend(line.strip() for line in paragraph.text.splitlines() if line.strip())
+            return "\n".join(lines)
+
         from pypdf import PdfReader
 
-        reader = PdfReader(str(CV_PDF))
+        reader = PdfReader(str(CV_FILE))
         return "\n".join(page.extract_text() or "" for page in reader.pages)
     except Exception:
         return ""
 
 
-def build_cv() -> None:
-    text = extract_cv_text()
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
-    header = []
-    experience_index = 0
-    for idx, line in enumerate(lines):
-        if line == "Professional Experience":
-            experience_index = idx
-            break
-        header.append(line)
-    content_lines = lines[experience_index:] if experience_index else lines
-    content = "\n".join(f"<p>{html.escape(line)}</p>" for line in content_lines)
-    intro = "\n".join(f"<p>{html.escape(line)}</p>" for line in header[:8])
-    body = f"""
-<section class="section cv-page">
-  <div class="cv-intro">
-    <p class="eyebrow">CV</p>
-    <h1>Lemi Hadarau</h1>
-    {intro}
+def merge_wrapped_bullets(lines: list[str]) -> list[str]:
+    bullets: list[str] = []
+    current = ""
+    for line in lines:
+        if line.startswith("•"):
+            if current:
+                bullets.append(current)
+            current = line.lstrip("• ").strip()
+        elif current:
+            current += " " + line
+        else:
+            bullets.append(line)
+    if current:
+        bullets.append(current)
+    return bullets
+
+
+def list_html(items: Iterable[str]) -> str:
+    return "<ul>" + "".join(f"<li>{html.escape(item)}</li>" for item in items if item.strip()) + "</ul>"
+
+
+def cv_timeline_item(year: str, period: str, title: str, meta: str, bullets: list[str]) -> str:
+    return f"""
+<article class="cv-timeline-item">
+  <div class="cv-year">{html.escape(year)}</div>
+  <div class="cv-marker" aria-hidden="true"></div>
+  <div class="cv-entry">
+    <p class="cv-period">{html.escape(period)}</p>
+    <h3>{html.escape(title)}</h3>
+    <p class="cv-meta">{html.escape(meta)}</p>
+    {list_html(bullets)}
   </div>
-  <div class="cv-content">{content}</div>
+</article>
+"""
+
+
+def cv_block(number: str, title: str, content: str, extra_class: str = "") -> str:
+    classes = "cv-block" + (f" {extra_class}" if extra_class else "")
+    return f"""
+<section class="{classes}">
+  <div class="cv-block-heading">
+    <span>{html.escape(number)}</span>
+    <h2>{html.escape(title)}</h2>
+  </div>
+  {content}
+</section>
+"""
+
+
+def build_cv() -> None:
+    name = "Lemi Hadarau"
+    qualification = "Registered Architect MRIAI"
+    location = "Dublin, Ireland"
+    licence = "Full driving licence"
+    email = "lemuel_marius@yahoo.com"
+    phone = "085 221 8018"
+
+    experience = "".join([
+        cv_timeline_item("2024", "Jun 2024 - Present", "Project Architect", "NODE Architecture, Dublin 2 · Full-time", [
+            "Act as Project Architect on multiple retail, commercial, and office fit-out projects, managing contract administration, day-to-day coordination, programme, and communication with clients, consultants, and contractors",
+            "Lead coordination on the Toyota National Retail Concept rollout, involving 43 dealerships upgrade projects across Ireland, including signage, joinery, A/V, internal upgrades and external facade works",
+            "Prepare and manage planning applications, H&S documentation, tender and construction packages",
+            "Prepare and coordinate Fire Safety Certificate and Disability Access Certificate applications, including preparation of drawings and documentation",
+            "Produce 3D models, CGI renderings, and presentations to support design development, planning submissions, and client approvals",
+            "Coordinate multidisciplinary teams including QS, M&E, structural engineers, and specialist subcontractors",
+            "Oversee site progress, attend site meetings and carry out site inspections, coordinate works during construction and resolve technical queries",
+            "Review contractor progress claims and assist with reviewing/signing off payment certificates in coordination with the QS/Director",
+            "Carry out snagging inspections, prepare snag lists, and coordinate completion items through to handover",
+            "Review, coordinate, and sign off contractor and specialist subcontractor shop drawings/submittals",
+            "Assist with BCAR/BCMS documentation and inspections, including coordination of required certificates, compliance documentation, and completion-stage information",
+            "Support project close-out, handover documentation, and completion-stage coordination",
+            "Support internal IT, workstation setup, software troubleshooting, and workflow improvements to improve office efficiency",
+            "Support and mentor architectural graduates in the office",
+        ]),
+        cv_timeline_item("2021", "Jul 2021 - May 2024", "Architectural Graduate (Part II)", "NODE Architecture, Dublin 2", [
+            "Worked closely with one of the Directors on high end residential and commercial projects across planning, tender, and construction stages",
+            "Produced 3D models, CGI renderings, photomontages and visual presentation material to support design development, planning applications, and client presentations",
+            "Assisted with planning applications for one-off houses, domestic extensions, and residential refurbishment projects",
+            "Produced planning drawings, tender packages, construction drawings, and supporting documentation, coordinating with structural and M&E input",
+            "Assisted with site inspections, meeting notes, and contract administration during construction stages",
+            "Gained strong experience in Irish planning processes, residential design, and technical detailing",
+            "Contributed to the practice's marketing and digital presence, including social media content management, updating the website with new projects, and photographing completed projects for marketing use",
+        ]),
+        cv_timeline_item("2018", "Oct 2018 - Aug 2019", "Architectural Assistant (Part I)", "NODE Architecture, Dublin 2", [
+            "Worked closely with Directors and senior architects on a range of residential, commercial, and student accommodation projects",
+            "Assisted with design development, planning applications, and project documentation",
+            "Prepared architectural drawings, 3D models, CGI visualisations, and presentation material for design development and client presentations",
+            "Assisted on the redevelopment of a former B&B into student accommodation on Stillorgan Road, including revised planning, FSC, DAC and construction drawings",
+            "Gained early experience in local authority processes, planning and building regulations, and communication with contractors and wider design teams",
+        ]),
+    ])
+
+    digital_workflow_bullets = [
+        "Strong working knowledge of PC hardware, software setup, troubleshooting, and workstation configuration",
+        "Researched, specified, purchased, and set up 4 new architectural workstations over the past three years, balancing performance requirements, office work needs, and budget",
+        "Prepared and configured workstations for new employees, including software installation, peripherals, and general setup",
+        "Liaising with external IT providers and advising on hardware specifications for CAD and visualisation work",
+        "Carried out regular maintenance, hardware/software upgrades, and performance troubleshooting to improve office efficiency",
+        "Supported the practice's digital presence through website content updates, social media content coordination, project photography and marketing material preparation",
+    ]
+
+    education_entries = [
+        ("2026", "Commencing Sept 2026", "Certificate in Building Information Modelling - Architecture", "Atlantic Technological University", "NFQ Level 8 · In progress · Expected 2027"),
+        ("2022", "Sept 2022 - May 2024", "Postgraduate Diploma in Architectural Practice (PDAP)", "Technological University Dublin", ""),
+        ("2019", "Sept 2019 - Sept 2021", "Master of Architecture (M.Arch)", "University College Dublin", ""),
+        ("2015", "Sept 2015 - Sept 2018", "Bachelor of Science (BSc) in Architectural Science", "University College Dublin", "UCD Entrance Scholar - University College Dublin, 2015<br>Awarded to high-achieving students based on 2014/2015 academic results (580 CAO points)"),
+    ]
+    education = "".join(
+        f"""
+<article class="cv-mini-entry">
+  <span>{html.escape(year)}</span>
+  <div>
+    <p>{html.escape(period)}</p>
+    <h3>{html.escape(title)}</h3>
+    <p class="cv-institution">{html.escape(place)}</p>
+    {f'<p class="cv-entry-note">{note}</p>' if note else ''}
+  </div>
+</article>
+"""
+        for year, period, title, place, note in education_entries
+    )
+
+    skills = f"""
+<div class="cv-skills-matrix">
+  <div class="cv-skill-group">
+    <h3>Software</h3>
+    <div class="cv-skill-cards cv-skill-cards-two">
+      <article>
+        <h4>Design &amp; Visualisation</h4>
+        {list_html(["AutoCAD", "SketchUp", "Lumion", "Adobe Creative Cloud (Photoshop, InDesign, Illustrator)", "Revit (basic)", "Vectorworks (basic)"])}
+      </article>
+      <article>
+        <h4>Project Delivery &amp; Collaboration</h4>
+        {list_html(["Microsoft Office 365", "Teams", "SharePoint", "Procore", "Fieldwire"])}
+      </article>
+    </div>
+  </div>
+  <div class="cv-skill-group">
+    <h3>Professional Skills</h3>
+    <div class="cv-skill-cards">
+      <article>
+        <h4>Project Delivery</h4>
+        {list_html(["Design Development", "Planning applications", "Tender & construction documentation", "FSC / DAC applications", "BCAR / BCMS", "Contract administration", "Site inspections", "Snagging & project handover"])}
+      </article>
+      <article>
+        <h4>Coordination &amp; Communication</h4>
+        {list_html(["Project coordination", "Consultant coordination", "Clear client & stakeholder communication", "Main contractor liaison", "Team collaboration", "Follow-up and action tracking"])}
+      </article>
+      <article>
+        <h4>Technical &amp; Quality</h4>
+        {list_html(["Adaptability & continuous learning", "Practical problem-solving", "Technical detailing", "Accuracy & attention to details", "CGI & 3D visualisation", "Programme and cost awareness"])}
+      </article>
+    </div>
+  </div>
+</div>
+"""
+    body = f"""
+<section class="section cv-page cv-redesign">
+  <header class="cv-identity">
+    <p class="eyebrow">CV</p>
+    <h1>{html.escape(name)}</h1>
+    <p class="cv-role">{html.escape(qualification)}</p>
+    <div class="cv-contact-lines">
+      <p>{html.escape(location)}<br>{html.escape(licence)}</p>
+      <p>E: <a href="mailto:{html.escape(email)}">{html.escape(email)}</a><br>Ph: {html.escape(phone)}</p>
+    </div>
+    <a class="cv-download" href="/2%20CV/{html.escape(CV_FILE.name)}" target="_blank" rel="noopener">Download CV</a>
+  </header>
+  <div class="cv-layout">
+    <aside class="cv-left-column">
+      {cv_block("01", "Professional Experience", f'<div class="cv-timeline">{experience}</div>')}
+    </aside>
+    <div class="cv-right-column">
+      {cv_block("02", "Education", education)}
+      {cv_block("03", "Additional Digital Workflows", list_html(digital_workflow_bullets), "cv-compact")}
+      {cv_block("04", "Skills", skills, "cv-skills-full")}
+    </div>
+  </div>
 </section>
 """
     write(ROOT / "cv" / "index.html", page("CV", body, active="cv"))

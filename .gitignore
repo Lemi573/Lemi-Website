@@ -1,4 +1,6 @@
 .server-*.log
+.server-*.err
 .server-all.log
+2 CV/_backups/
 __pycache__/
 *.pyc
