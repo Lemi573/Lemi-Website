@@ -2,7 +2,8 @@ document.addEventListener("click", (event) => {
   const tab = event.target.closest(".tabs button");
   if (tab) {
     const tabs = tab.parentElement.querySelectorAll("button");
-    const section = tab.closest(".design-process");
+    const section = tab.closest(".tabbed-section");
+    if (!section) return;
     tabs.forEach((item) => {
       item.classList.toggle("active", item === tab);
       item.setAttribute("aria-selected", item === tab ? "true" : "false");
@@ -42,6 +43,15 @@ document.querySelectorAll(".gallery-grid").forEach((gallery) => {
     event.preventDefault();
     gallery.scrollBy({ left: event.deltaY * 0.9, behavior: "smooth" });
   }, { passive: false });
+});
+
+document.querySelectorAll(".before-after").forEach((slider) => {
+  const range = slider.querySelector(".before-after-range");
+  const update = () => {
+    slider.style.setProperty("--before-after-position", `${range.value}%`);
+  };
+  range.addEventListener("input", update);
+  update();
 });
 
 function openLightbox(items, index) {

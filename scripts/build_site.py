@@ -43,6 +43,14 @@ class ImageAsset:
 
 
 @dataclass
+class BeforeAfterPair:
+    title: str
+    existing: ImageAsset
+    proposed: ImageAsset
+    orientation: str
+
+
+@dataclass
 class Project:
     category: str
     category_slug: str
@@ -53,6 +61,7 @@ class Project:
     info: ProjectInfo
     cover: ImageAsset
     sections: dict[str, list[ImageAsset]]
+    before_after: list[BeforeAfterPair]
     design_iterations: dict[str, list[ImageAsset]]
 
 
@@ -179,6 +188,72 @@ def direct_image_files(path: Path) -> list[Path]:
     )
 
 
+def before_after_marker(path: Path) -> str:
+    if re.search(r"\bexisting\b", path.stem, re.IGNORECASE):
+        return "existing"
+    if re.search(r"\bproposed\b", path.stem, re.IGNORECASE):
+        return "proposed"
+    return ""
+
+
+def before_after_key(path: Path) -> str:
+    key = re.sub(r"\b(existing|proposed)\b", "", path.stem, flags=re.IGNORECASE)
+    key = re.sub(r"\b\d+\b", "", key)
+    key = re.sub(r"[-_]+", " ", key)
+    key = re.sub(r"\s+", " ", key).strip()
+    return key or path.parent.name
+
+
+def photomontage_before_after(section_path: Path) -> tuple[list[BeforeAfterPair], list[Path]]:
+    pairs: list[BeforeAfterPair] = []
+    used: set[Path] = set()
+
+    def pair_orientation(existing: Path, proposed: Path) -> str:
+        with Image.open(existing) as existing_image, Image.open(proposed) as proposed_image:
+            width = min(existing_image.width, proposed_image.width)
+            height = min(existing_image.height, proposed_image.height)
+        return "portrait" if height > width else "landscape"
+
+    for folder in sorted([p for p in section_path.iterdir() if p.is_dir()], key=lambda p: natural_key(p.name)):
+        files = image_files(folder)
+        existing = next((p for p in files if before_after_marker(p) == "existing"), None)
+        proposed = next((p for p in files if before_after_marker(p) == "proposed"), None)
+        if existing and proposed:
+            pairs.append(
+                BeforeAfterPair(
+                    title=strip_leading_number(folder.name),
+                    existing=optimize_image(existing),
+                    proposed=optimize_image(proposed),
+                    orientation=pair_orientation(existing, proposed),
+                )
+            )
+            used.update({existing, proposed})
+
+    flat_groups: dict[str, dict[str, Path]] = {}
+    for file in direct_image_files(section_path):
+        marker = before_after_marker(file)
+        if not marker:
+            continue
+        flat_groups.setdefault(before_after_key(file), {})[marker] = file
+
+    for key, group in sorted(flat_groups.items(), key=lambda item: natural_key(item[0])):
+        existing = group.get("existing")
+        proposed = group.get("proposed")
+        if existing and proposed and existing not in used and proposed not in used:
+            pairs.append(
+                BeforeAfterPair(
+                    title=key,
+                    existing=optimize_image(existing),
+                    proposed=optimize_image(proposed),
+                    orientation=pair_orientation(existing, proposed),
+                )
+            )
+            used.update({existing, proposed})
+
+    loose_images = [p for p in image_files(section_path) if p not in used]
+    return pairs, loose_images
+
+
 def load_projects() -> list[Project]:
     projects: list[Project] = []
     categories = sorted([p for p in PROJECTS_ROOT.iterdir() if p.is_dir()], key=leading_number)
@@ -200,6 +275,7 @@ def load_projects() -> list[Project]:
             display_name = bracket_name(project_path.name)
             project_slug = slugify(display_name)
             sections: dict[str, list[ImageAsset]] = {}
+            before_after: list[BeforeAfterPair] = []
             design_iterations: dict[str, list[ImageAsset]] = {}
             for section_path in sorted([p for p in project_path.iterdir() if p.is_dir()], key=lambda p: natural_key(p.name)):
                 if section_path.name.lower() == "visualisations":
@@ -213,6 +289,12 @@ def load_projects() -> list[Project]:
                     ]
                     if normal_visuals:
                         sections["Visualisations"] = [optimize_image(img) for img in normal_visuals]
+                    continue
+
+                if section_path.name.lower().startswith("photomontage"):
+                    before_after, loose_images = photomontage_before_after(section_path)
+                    if loose_images:
+                        sections["Photomontages"] = [optimize_image(img) for img in loose_images]
                     continue
 
                 images = image_files(section_path)
@@ -231,6 +313,7 @@ def load_projects() -> list[Project]:
                     info=parse_project_info(info_files[0]),
                     cover=optimize_image(cover_files[0]),
                     sections=sections,
+                    before_after=before_after,
                     design_iterations=design_iterations,
                 )
             )
@@ -254,8 +337,8 @@ def page(title: str, body: str, active: str = "", body_class: str = "") -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)} | Lemi Hadarau</title>
   <meta name="description" content="Architectural portfolio of Lemi Hadarau, Architect based in Ireland.">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=image-bg-white-1">
-  <script src="/assets/js/site.js?v=image-bg-white-1" defer></script>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=cv-contact-icons-3">
+  <script src="/assets/js/site.js?v=cv-contact-icons-3" defer></script>
 </head>
 <body{f' class="{html.escape(body_class)}"' if body_class else ''}>
   <header class="site-header">
@@ -265,8 +348,7 @@ def page(title: str, body: str, active: str = "", body_class: str = "") -> str:
   <main>{body}</main>
   <footer class="site-footer">
     <span>Lemi Hadarau</span>
-    <span>Architect MRIAI</span>
-    <a href="mailto:lemuel_marius@yahoo.com?subject=Portfolio%20Enquiry">lemuel_marius@yahoo.com</a>
+    <span>Registered Architect MRIAI</span>
   </footer>
   <div class="lightbox" aria-hidden="true">
     <button class="lightbox-close" type="button" aria-label="Close image">Close</button>
@@ -320,17 +402,22 @@ def build_home(projects: list[Project]) -> None:
     featured = "\n".join(project_card(project) for project in projects[:5])
     body = f"""
 <section class="home-intro section">
-  <div>
-    <p class="eyebrow">Architect MRIAI</p>
-    <h1>Lemi Hadarau</h1>
-    <div class="intro-copy">{paragraph_html(about[:3])}</div>
+  <h1 class="about-heading">About</h1>
+  <figure class="portrait-frame">
+    {portrait_html}
+    <figcaption>
+      <strong>Lemi Hadarau</strong>
+      <span>Registered Architect MRIAI</span>
+    </figcaption>
+  </figure>
+  <div class="intro-content">
+    <div class="intro-copy">{paragraph_html(about)}</div>
     <div class="intro-links">
       <a href="/projects/">View projects</a>
       <a href="/cv/">View CV</a>
       <a href="/contact/">Contact</a>
     </div>
   </div>
-  <figure class="portrait-frame">{portrait_html}</figure>
 </section>
 <section class="section featured-section">
   <div class="section-heading">
@@ -371,6 +458,42 @@ def gallery_html(name: str, images: list[ImageAsset]) -> str:
 </section>"""
 
 
+def before_after_html(pairs: list[BeforeAfterPair]) -> str:
+    if not pairs:
+        return ""
+    tabs = []
+    panels = []
+    for index, pair in enumerate(pairs):
+        tab_id = f"before-after-tab-{index}"
+        panel_id = f"before-after-panel-{index}"
+        tabs.append(
+            f'<button class="{"active" if index == 0 else ""}" id="{tab_id}" type="button" role="tab" aria-controls="{panel_id}" aria-selected="{str(index == 0).lower()}">{html.escape(pair.title)}</button>'
+        )
+        panels.append(
+            f"""
+  <div class="tab-panel {"active" if index == 0 else ""}" id="{panel_id}" role="tabpanel" aria-labelledby="{tab_id}">
+    <figure class="before-after before-after-{html.escape(pair.orientation)}" style="--before-after-position: 50%">
+      <div class="before-after-media">
+        <img src="{pair.existing.url}" alt="{html.escape(pair.existing.alt)}">
+        <div class="before-after-overlay">
+          <img src="{pair.proposed.url}" alt="{html.escape(pair.proposed.alt)}">
+        </div>
+        <span class="before-after-label before-after-label-existing">Existing</span>
+        <span class="before-after-label before-after-label-proposed">Proposed</span>
+        <div class="before-after-divider" aria-hidden="true"><span></span></div>
+        <input class="before-after-range" type="range" min="0" max="100" value="50" aria-label="{html.escape(pair.title)} before and after comparison">
+      </div>
+    </figure>
+  </div>"""
+        )
+    return f"""
+<section class="project-section before-after-section tabbed-section">
+  <h2>Photomontages</h2>
+  <div class="tabs" role="tablist">{"".join(tabs)}</div>
+  {"".join(panels)}
+</section>"""
+
+
 def design_process_html(project: Project) -> str:
     if not project.design_iterations:
         return ""
@@ -390,7 +513,7 @@ def design_process_html(project: Project) -> str:
             f'<div class="tab-panel {"active" if index == 0 else ""}" id="{panel_id}" role="tabpanel" aria-labelledby="{tab_id}"><div class="gallery-grid">{items}</div></div>'
         )
     return f"""
-<section class="project-section design-process">
+<section class="project-section design-process tabbed-section">
   <h2>Design Process</h2>
   <div class="tabs" role="tablist">{"".join(tabs)}</div>
   {"".join(panels)}
@@ -400,6 +523,8 @@ def design_process_html(project: Project) -> str:
 def build_project(project: Project, previous_project: Project | None, next_project: Project | None) -> None:
     section_order = ["Visualisations", "Photomontages", "Photos", "Drawings"]
     galleries = []
+    if project.before_after:
+        galleries.append(before_after_html(project.before_after))
     for section in section_order:
         if section in project.sections:
             galleries.append(gallery_html(section, project.sections[section]))
@@ -652,7 +777,10 @@ def build_cv() -> None:
     <p class="cv-role">{html.escape(qualification)}</p>
     <div class="cv-contact-lines">
       <p>{html.escape(location)}<br>{html.escape(licence)}</p>
-      <p>E: <a href="mailto:{html.escape(email)}">{html.escape(email)}</a><br>Ph: {html.escape(phone)}</p>
+      <p class="cv-contact-list">
+        <span><span class="cv-contact-icon" aria-hidden="true">✉</span><a href="mailto:{html.escape(email)}">{html.escape(email)}</a></span>
+        <span><span class="cv-contact-icon cv-contact-icon-phone" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M6.5 3.2 4.3 5.4c-.7.7-.9 1.7-.5 2.6 2.4 4.9 6.3 8.8 11.2 11.2.9.4 1.9.2 2.6-.5l2.2-2.2c.5-.5.5-1.2 0-1.7l-3.1-3.1c-.4-.4-1.1-.5-1.6-.2l-1.8 1c-1.8-1.1-3.4-2.7-4.5-4.5l1-1.8c.3-.5.2-1.2-.2-1.6L8.2 3.2c-.5-.5-1.2-.5-1.7 0z"/></svg></span>{html.escape(phone)}</span>
+      </p>
     </div>
     <a class="cv-download" href="/2%20CV/{html.escape(CV_FILE.name)}" target="_blank" rel="noopener">Download CV</a>
   </header>
@@ -679,14 +807,13 @@ def build_contact() -> None:
     linkedin = re.search(r"LinkedIn:\s*(https?://\S+)", text)
     body = f"""
 <section class="section contact-page">
-  <p class="eyebrow">Contact</p>
   <h1>Contact</h1>
   <p>For professional enquiries or opportunities, please contact me by email or phone.</p>
   <div class="contact-card">
     <p><strong>Email</strong><a href="mailto:{email.group(1) if email else 'lemuel_marius@yahoo.com'}?subject=Portfolio%20Enquiry">{email.group(1) if email else 'lemuel_marius@yahoo.com'}</a></p>
     <p><strong>Phone</strong><a href="tel:+353852218018">{phone.group(1).strip() if phone else '085 221 8018'}</a></p>
     <p><strong>Location</strong><span>{location.group(1).strip() if location else 'Ratoath, Co. Meath'}</span></p>
-    <p><strong>LinkedIn</strong><a href="{linkedin.group(1) if linkedin else 'https://www.linkedin.com/in/lemi-hadarau-b8780a15a/'}" target="_blank" rel="noreferrer">LinkedIn</a></p>
+    <p><strong>LinkedIn</strong><a href="{linkedin.group(1) if linkedin else 'https://www.linkedin.com/in/lemi-hadarau-b8780a15a/'}" target="_blank" rel="noreferrer">Lemi Hadarau</a></p>
   </div>
 </section>
 """
