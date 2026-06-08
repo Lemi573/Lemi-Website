@@ -24,7 +24,9 @@ document.addEventListener("click", (event) => {
 });
 
 const hero = document.querySelector(".project-hero img");
-if (hero && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+if (hero && !reduceMotion) {
   const updateHeroMotion = () => {
     const progress = Math.min(Math.max(window.scrollY / 520, 0), 1);
     const eased = 1 - Math.pow(1 - progress, 3);
@@ -34,6 +36,36 @@ if (hero && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
   };
   updateHeroMotion();
   window.addEventListener("scroll", updateHeroMotion, { passive: true });
+}
+
+if (!reduceMotion && "IntersectionObserver" in window) {
+  const revealItems = document.querySelectorAll([
+    ".portrait-frame",
+    ".intro-content",
+    ".featured-section",
+    ".project-card",
+    ".page-title",
+    ".filters",
+    ".project-hero",
+    ".project-info",
+    ".project-section",
+    ".cv-identity",
+    ".cv-block",
+    ".contact-card",
+  ].join(","));
+
+  const revealObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add("is-visible");
+      observer.unobserve(entry.target);
+    });
+  }, { rootMargin: "0px 0px -10% 0px", threshold: 0.12 });
+
+  revealItems.forEach((item) => {
+    item.classList.add("reveal");
+    revealObserver.observe(item);
+  });
 }
 
 document.querySelectorAll(".gallery-grid").forEach((gallery) => {
