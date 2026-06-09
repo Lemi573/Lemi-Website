@@ -20,7 +20,7 @@ CV_FILE = ROOT / "2 CV" / "Lemi_Hadarau_CV.docx"
 GENERATED_ASSETS = ROOT / "assets" / "generated"
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
-ENABLED_CATEGORIES = {"Commercial"}
+ENABLED_CATEGORIES = {"Commercial", "Retail", "Office Fit Out", "Public", "Residential"}
 
 
 @dataclass
@@ -100,6 +100,14 @@ def slugify(value: str) -> str:
     ascii_value = normalized.encode("ascii", "ignore").decode("ascii")
     slug = re.sub(r"[^a-zA-Z0-9]+", "-", ascii_value).strip("-").lower()
     return slug or "item"
+
+
+def project_reference(path: Path) -> str:
+    stripped = strip_leading_number(path.name)
+    match = re.match(r"([A-Za-z0-9]+)", stripped)
+    if match:
+        return slugify(match.group(1))
+    return str(leading_number(path))
 
 
 def paragraph_html(paragraphs: Iterable[str]) -> str:
@@ -256,12 +264,14 @@ def photomontage_before_after(section_path: Path) -> tuple[list[BeforeAfterPair]
 
 def load_projects() -> list[Project]:
     projects: list[Project] = []
+    used_slugs_by_category: dict[str, set[str]] = {}
     categories = sorted([p for p in PROJECTS_ROOT.iterdir() if p.is_dir()], key=leading_number)
     for category_path in categories:
         category_name = strip_leading_number(category_path.name)
         category_slug = slugify(category_name)
         if category_name not in ENABLED_CATEGORIES:
             continue
+        used_slugs = used_slugs_by_category.setdefault(category_slug, set())
         for project_path in sorted([p for p in category_path.iterdir() if p.is_dir()], key=leading_number):
             info_files = sorted(project_path.glob("*Project Information.txt"), key=lambda p: natural_key(p.name))
             cover_files = [
@@ -273,7 +283,15 @@ def load_projects() -> list[Project]:
                 continue
 
             display_name = bracket_name(project_path.name)
-            project_slug = slugify(display_name)
+            base_slug = slugify(display_name)
+            project_slug = base_slug
+            if project_slug in used_slugs:
+                project_slug = f"{base_slug}-{project_reference(project_path)}"
+            counter = 2
+            while project_slug in used_slugs:
+                project_slug = f"{base_slug}-{project_reference(project_path)}-{counter}"
+                counter += 1
+            used_slugs.add(project_slug)
             sections: dict[str, list[ImageAsset]] = {}
             before_after: list[BeforeAfterPair] = []
             design_iterations: dict[str, list[ImageAsset]] = {}
@@ -285,7 +303,7 @@ def load_projects() -> list[Project]:
                     for iteration in sorted(iteration_dirs, key=lambda p: natural_key(p.name)):
                         design_iterations[iteration.name] = [optimize_image(img) for img in image_files(iteration)]
                     normal_visuals = [
-                        p for p in direct_image_files(section_path) if p.suffix.lower() in IMAGE_EXTENSIONS
+                        p for p in image_files(section_path) if not any(p.is_relative_to(iteration) for iteration in iteration_dirs)
                     ]
                     if normal_visuals:
                         sections["Visualisations"] = [optimize_image(img) for img in normal_visuals]
@@ -390,6 +408,26 @@ def project_card(project: Project) -> str:
   <img src="{project.cover.url}" alt="{html.escape(project.display_name)}">
   <span class="project-card-title">{html.escape(project.display_name)}</span>
 </a>"""
+
+
+def project_categories(projects: list[Project]) -> list[tuple[str, str]]:
+    categories: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for project in projects:
+        if project.category_slug in seen:
+            continue
+        categories.append((project.category, project.category_slug))
+        seen.add(project.category_slug)
+    return categories
+
+
+def project_filters(projects: list[Project], active_slug: str = "all") -> str:
+    all_class = "active" if active_slug == "all" else ""
+    links = [f'<a class="{all_class}" href="/projects/">All</a>']
+    for category, category_slug in project_categories(projects):
+        active_class = "active" if category_slug == active_slug else ""
+        links.append(f'<a class="{active_class}" href="/projects/{category_slug}/">{html.escape(category)}</a>')
+    return "\n".join(links)
 
 
 def build_home(projects: list[Project]) -> None:
@@ -569,29 +607,50 @@ def build_project(project: Project, previous_project: Project | None, next_proje
   {prev_next}
 </article>
 """
-    body_class = "lightbox-thumbs-prototype" if project.category_slug == "commercial" else ""
+    body_class = "lightbox-thumbs-prototype"
     write(ROOT / "projects" / project.category_slug / project.slug / "index.html", page(project.display_name, body, active="projects", body_class=body_class))
 
 
-def build_projects_index(projects: list[Project]) -> None:
-    cards = "\n".join(project_card(project) for project in projects)
+def build_projects_listing(projects: list[Project], visible_projects: list[Project], active_slug: str, title: str, intro: str, output_path: Path) -> None:
+    cards = "\n".join(project_card(project) for project in visible_projects)
     body = f"""
 <section class="section page-title">
   <p class="eyebrow">Projects</p>
-  <h1>Selected architectural work</h1>
-  <p>This first build focuses on the Commercial section. The same file-based structure will extend to Retail, Office Fit Out, Public and Residential once the design direction is approved.</p>
+  <h1>{html.escape(title)}</h1>
+  <p>{html.escape(intro)}</p>
 </section>
 <section class="section filters" aria-label="Project categories">
-  <a class="active" href="/projects/">All</a>
-  <a class="active" href="/projects/">Commercial</a>
-  <span>Retail</span>
-  <span>Office Fit Out</span>
-  <span>Public</span>
-  <span>Residential</span>
+  {project_filters(projects, active_slug)}
 </section>
 <section class="section project-grid">{cards}</section>
 """
-    write(ROOT / "projects" / "index.html", page("Projects", body, active="projects"))
+    write(output_path, page("Projects", body, active="projects"))
+
+
+def build_projects_index(projects: list[Project]) -> None:
+    intro = "Selected project work across Commercial, Retail, Office Fit Out, Public and Residential."
+    build_projects_listing(projects, projects, "all", "Selected architectural work", intro, ROOT / "projects" / "index.html")
+
+
+def build_category_indexes(projects: list[Project]) -> None:
+    for category, category_slug in project_categories(projects):
+        category_projects = [project for project in projects if project.category_slug == category_slug]
+        intro = f"Selected {category.lower()} project work."
+        build_projects_listing(
+            projects,
+            category_projects,
+            category_slug,
+            f"{category} Projects",
+            intro,
+            ROOT / "projects" / category_slug / "index.html",
+        )
+
+
+def projects_by_category(projects: list[Project]) -> dict[str, list[Project]]:
+    grouped: dict[str, list[Project]] = {}
+    for project in projects:
+        grouped.setdefault(project.category_slug, []).append(project)
+    return grouped
 
 
 def extract_cv_text() -> str:
@@ -835,13 +894,15 @@ def main() -> None:
     projects = load_projects()
     build_home(projects)
     build_projects_index(projects)
-    for index, project in enumerate(projects):
-        previous_project = projects[index - 1] if index > 0 else None
-        next_project = projects[index + 1] if index + 1 < len(projects) else None
-        build_project(project, previous_project, next_project)
+    build_category_indexes(projects)
+    for category_projects in projects_by_category(projects).values():
+        for index, project in enumerate(category_projects):
+            previous_project = category_projects[index - 1] if index > 0 else None
+            next_project = category_projects[index + 1] if index + 1 < len(category_projects) else None
+            build_project(project, previous_project, next_project)
     build_cv()
     build_contact()
-    print(f"Built site with {len(projects)} Commercial projects.")
+    print(f"Built site with {len(projects)} projects across {len(project_categories(projects))} categories.")
 
 
 if __name__ == "__main__":
