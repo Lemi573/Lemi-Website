@@ -29,13 +29,13 @@ body {
 }
 
 main {
-  animation: page-enter 520ms ease both;
+  animation: page-enter 260ms ease both;
 }
 
 @keyframes page-enter {
   from {
-    opacity: 0;
-    transform: translateY(8px);
+    opacity: 0.72;
+    transform: translateY(4px);
   }
 
   to {
@@ -177,8 +177,7 @@ h2 {
 }
 
 .intro-links a,
-.filters a,
-.filters span {
+.filters a {
   padding-bottom: 6px;
   border-bottom: 1px solid currentColor;
 }
@@ -227,12 +226,14 @@ h2 {
 }
 
 .featured-section,
-.page-title,
 .project-grid,
-.filters,
 .cv-page,
 .contact-page {
   padding: 54px 0;
+}
+
+.page-title {
+  padding: clamp(44px, 6vw, 74px) 0 clamp(28px, 4vw, 44px);
 }
 
 .section-heading {
@@ -298,16 +299,37 @@ h2 {
   flex-wrap: wrap;
   gap: 16px 26px;
   color: var(--muted);
+  padding: 16px 0 48px;
+}
+
+.filters a {
+  border-bottom-color: transparent;
+  color: #767676;
+  transition: border-color 180ms ease, color 180ms ease;
 }
 
 .filters .active {
   color: var(--text);
+  border-bottom-color: currentColor;
+  font-weight: 500;
+}
+
+.filters a:hover,
+.filters a:focus-visible {
+  color: var(--text);
+  border-bottom-color: currentColor;
 }
 
 .page-title {
   max-width: min(var(--max), calc(100vw - 44px));
   margin-left: auto;
   margin-right: auto;
+}
+
+.page-title h1 {
+  max-width: 1080px;
+  margin-bottom: 22px;
+  font-size: clamp(42px, 7vw, 86px);
 }
 
 .page-title p {
@@ -319,10 +341,10 @@ h2 {
 .project-hero {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 28px;
+  gap: 22px;
   width: min(var(--max), calc(100vw - 44px));
   margin: 0 auto;
-  padding: 34px 0 84px;
+  padding: 34px 0 64px;
 }
 
 .project-hero img {
@@ -628,9 +650,9 @@ dd {
 
 .cv-redesign {
   grid-template-columns: 1fr;
-  gap: clamp(54px, 7vw, 96px);
-  padding-top: clamp(70px, 9vw, 128px);
-  padding-bottom: clamp(80px, 10vw, 140px);
+  gap: clamp(38px, 5vw, 70px);
+  padding-top: clamp(54px, 7vw, 92px);
+  padding-bottom: clamp(70px, 9vw, 118px);
 }
 
 .cv-identity {
@@ -638,7 +660,7 @@ dd {
 }
 
 .cv-identity .eyebrow {
-  margin-bottom: clamp(56px, 7vw, 90px);
+  margin-bottom: clamp(38px, 5vw, 64px);
   font-size: 13px;
 }
 
@@ -650,7 +672,7 @@ dd {
 }
 
 .cv-role {
-  margin-bottom: clamp(50px, 6vw, 72px);
+  margin-bottom: clamp(34px, 5vw, 54px);
   color: var(--muted);
   font-size: clamp(18px, 2vw, 25px);
   line-height: 1.1;
@@ -940,11 +962,13 @@ dd {
 
 .contact-page {
   max-width: 780px;
+  padding-top: clamp(64px, 8vw, 104px);
+  padding-bottom: clamp(64px, 8vw, 104px);
 }
 
 .contact-card {
   margin-top: 34px;
-  border: 1px solid var(--line);
+  border: 1px solid #d8d8d8;
   padding: clamp(24px, 4vw, 42px);
 }
 
@@ -957,6 +981,15 @@ dd {
 
 .contact-card p:last-child {
   margin-bottom: 0;
+}
+
+.contact-card strong {
+  color: var(--text);
+}
+
+.contact-card a,
+.contact-card span {
+  color: #242424;
 }
 
 .site-footer {
@@ -972,9 +1005,9 @@ dd {
 }
 
 .reveal {
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 620ms ease, transform 620ms ease;
+  opacity: 0.34;
+  transform: translateY(7px);
+  transition: opacity 420ms ease, transform 420ms ease;
 }
 
 .reveal.is-visible {
@@ -989,6 +1022,18 @@ dd {
   display: none;
   align-items: center;
   justify-content: center;
+  --lightbox-control-size: 44px;
+  --lightbox-control-gap: 24px;
+  --lightbox-close-gap: 16px;
+  --lightbox-viewport-padding: 12px;
+  --lightbox-image-left: max(24px, calc((100vw - var(--max)) / 2));
+  --lightbox-image-right: max(24px, calc((100vw - var(--max)) / 2));
+  --lightbox-image-top: 72px;
+  --lightbox-image-mid: 50vh;
+  --lightbox-prev-left: 24px;
+  --lightbox-next-left: calc(100vw - 68px);
+  --lightbox-close-left: calc(100vw - 68px);
+  --lightbox-close-top: 18px;
   background: rgba(255, 255, 255, 0.96);
 }
 
@@ -997,7 +1042,7 @@ dd {
 }
 
 .lightbox > img {
-  max-width: min(92vw, 1600px);
+  max-width: min(calc(100vw - 220px), 1600px);
   max-height: 86vh;
   object-fit: contain;
 }
@@ -1015,30 +1060,99 @@ dd {
 .lightbox-prev,
 .lightbox-next {
   position: fixed;
+  display: grid;
+  width: var(--lightbox-control-size);
+  height: var(--lightbox-control-size);
+  place-items: center;
   cursor: pointer;
-  background: #fff;
-  border: 1px solid var(--line);
-  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid #d8d8d8;
+  padding: 0;
+  color: #111;
   font: inherit;
+  transition: background 160ms ease, border-color 160ms ease, opacity 160ms ease;
+}
+
+.lightbox-close:hover,
+.lightbox-prev:hover,
+.lightbox-next:hover,
+.lightbox-close:focus-visible,
+.lightbox-prev:focus-visible,
+.lightbox-next:focus-visible {
+  background: #fff;
+  border-color: #bdbdbd;
+}
+
+.lightbox-close span,
+.lightbox-prev span,
+.lightbox-next span {
+  position: relative;
+  display: block;
 }
 
 .lightbox-close {
-  top: 24px;
-  right: 24px;
+  top: var(--lightbox-close-top);
+  left: var(--lightbox-close-left);
+}
+
+.lightbox-close span {
+  width: 16px;
+  height: 16px;
+}
+
+.lightbox-close span::before,
+.lightbox-close span::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 1px;
+  background: currentColor;
+}
+
+.lightbox-close span::before {
+  transform: rotate(45deg);
+}
+
+.lightbox-close span::after {
+  transform: rotate(-45deg);
 }
 
 .lightbox-prev {
-  left: 24px;
+  top: var(--lightbox-image-mid);
+  left: var(--lightbox-prev-left);
+  transform: translateY(-50%);
 }
 
 .lightbox-next {
-  right: 24px;
+  top: var(--lightbox-image-mid);
+  left: var(--lightbox-next-left);
+  transform: translateY(-50%);
+}
+
+.lightbox-prev span,
+.lightbox-next span {
+  width: 13px;
+  height: 13px;
+  border-top: 1px solid currentColor;
+  border-left: 1px solid currentColor;
+}
+
+.lightbox-prev span {
+  margin-left: 4px;
+  transform: rotate(-45deg);
+}
+
+.lightbox-next span {
+  margin-right: 4px;
+  transform: rotate(135deg);
 }
 
 .lightbox-thumbs-prototype .lightbox.open {
   flex-direction: column;
   gap: 20px;
-  padding: 72px 80px 44px;
+  padding: 72px max(72px, calc((100vw - var(--max)) / 2)) 44px;
   box-sizing: border-box;
 }
 
@@ -1132,6 +1246,13 @@ dd {
   .site-header {
     align-items: flex-start;
     flex-direction: column;
+    gap: 18px;
+    padding-top: 22px;
+    padding-bottom: 24px;
+  }
+
+  .site-header nav {
+    gap: 18px;
   }
 
   .featured-row,
@@ -1152,6 +1273,38 @@ dd {
   .contact-card p {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+
+  .page-title {
+    padding-top: 52px;
+    padding-bottom: 26px;
+  }
+
+  .page-title h1 {
+    margin-bottom: 20px;
+    font-size: clamp(39px, 13vw, 50px);
+    line-height: 0.98;
+  }
+
+  .filters {
+    gap: 14px 24px;
+    padding-top: 10px;
+    padding-bottom: 42px;
+  }
+
+  .project-hero {
+    gap: 18px;
+    padding: 38px 0 52px;
+  }
+
+  .project-hero h1 {
+    margin-bottom: 0;
+    font-size: clamp(38px, 12vw, 54px);
+    line-height: 1;
+  }
+
+  .project-info {
+    padding-bottom: 58px;
   }
 
   .cv-redesign {
@@ -1179,6 +1332,24 @@ dd {
   .cv-year {
     color: var(--muted);
     font-size: 13px;
+  }
+
+  .lightbox > img {
+    max-width: 92vw;
+  }
+
+  .lightbox {
+    --lightbox-control-gap: 10px;
+    --lightbox-close-gap: 12px;
+    --lightbox-viewport-padding: 10px;
+  }
+
+  .lightbox-thumbs-prototype .lightbox.open {
+    padding: 62px 16px 32px;
+  }
+
+  .lightbox-thumbs {
+    max-width: calc(100vw - 32px);
   }
 }
 

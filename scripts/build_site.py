@@ -40,6 +40,7 @@ class ImageAsset:
     source: Path
     url: str
     alt: str
+    full_url: str = ""
 
 
 @dataclass
@@ -118,10 +119,11 @@ def output_path_to_url(path: Path) -> str:
     return "/" + path.relative_to(ROOT).as_posix()
 
 
-def optimize_image(source: Path, width: int = 2200) -> ImageAsset:
+def optimized_image_url(source: Path, width: int = 2200) -> str:
     rel = source.relative_to(ROOT)
     digest = hashlib.sha1(str(rel).encode("utf-8")).hexdigest()[:10]
-    filename = f"{slugify(source.stem)}-{digest}.jpg"
+    width_suffix = "" if width == 2200 else f"-w{width}"
+    filename = f"{slugify(source.stem)}{width_suffix}-{digest}.jpg"
     dest = GENERATED_ASSETS / filename
     if not dest.exists() or dest.stat().st_mtime < source.stat().st_mtime:
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -133,7 +135,13 @@ def optimize_image(source: Path, width: int = 2200) -> ImageAsset:
                 height = round(image.height * (width / image.width))
                 image = image.resize((width, height), Image.Resampling.LANCZOS)
             image.save(dest, "JPEG", quality=86, optimize=True, progressive=True)
-    return ImageAsset(source=source, url=output_path_to_url(dest), alt=source.stem)
+    return output_path_to_url(dest)
+
+
+def optimize_image(source: Path, width: int = 1600, full_width: int | None = 2200) -> ImageAsset:
+    url = optimized_image_url(source, width=width)
+    full_url = optimized_image_url(source, width=full_width) if full_width else url
+    return ImageAsset(source=source, url=url, alt=source.stem, full_url=full_url)
 
 
 def parse_project_info(path: Path) -> ProjectInfo:
@@ -355,8 +363,8 @@ def page(title: str, body: str, active: str = "", body_class: str = "") -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)} | Lemi Hadarau</title>
   <meta name="description" content="Architectural portfolio of Lemi Hadarau, Architect based in Ireland.">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=quiet-motion-2">
-  <script src="/assets/js/site.js?v=quiet-motion-2" defer></script>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=polish-test-1">
+  <script src="/assets/js/site.js?v=polish-test-1" defer></script>
 </head>
 <body{f' class="{html.escape(body_class)}"' if body_class else ''}>
   <header class="site-header">
@@ -369,10 +377,10 @@ def page(title: str, body: str, active: str = "", body_class: str = "") -> str:
     <span>Registered Architect MRIAI</span>
   </footer>
   <div class="lightbox" aria-hidden="true">
-    <button class="lightbox-close" type="button" aria-label="Close image">Close</button>
-    <button class="lightbox-prev" type="button" aria-label="Previous image">Prev</button>
+    <button class="lightbox-close" type="button" aria-label="Close image"><span aria-hidden="true"></span></button>
+    <button class="lightbox-prev" type="button" aria-label="Previous image"><span aria-hidden="true"></span></button>
     <img alt="">
-    <button class="lightbox-next" type="button" aria-label="Next image">Next</button>
+    <button class="lightbox-next" type="button" aria-label="Next image"><span aria-hidden="true"></span></button>
   </div>
 </body>
 </html>
@@ -403,9 +411,10 @@ def about_portrait() -> ImageAsset | None:
 
 
 def project_card(project: Project) -> str:
+    card_url = optimized_image_url(project.cover.source, width=900)
     return f"""
 <a class="project-card" href="/projects/{project.category_slug}/{project.slug}/">
-  <img src="{project.cover.url}" alt="{html.escape(project.display_name)}">
+  <img src="{card_url}" alt="{html.escape(project.display_name)}" loading="lazy" decoding="async">
   <span class="project-card-title">{html.escape(project.display_name)}</span>
 </a>"""
 
@@ -434,7 +443,7 @@ def build_home(projects: list[Project]) -> None:
     about = read_about()
     portrait = about_portrait()
     if portrait:
-        portrait_html = f'<img src="{portrait.url}" alt="Black and white portrait of Lemi Hadarau">'
+        portrait_html = f'<img src="{portrait.url}" alt="Black and white portrait of Lemi Hadarau" decoding="async">'
     else:
         portrait_html = '<div class="portrait-placeholder">Portrait image<br>to be added</div>'
     featured = "\n".join(project_card(project) for project in projects[:5])
@@ -486,7 +495,7 @@ def gallery_html(name: str, images: list[ImageAsset]) -> str:
     if not images:
         return ""
     items = "\n".join(
-        f'<button class="gallery-item" type="button"><img src="{img.url}" alt="{html.escape(img.alt)}"></button>'
+        f'<button class="gallery-item" type="button"><img src="{img.url}" data-full-src="{img.full_url}" alt="{html.escape(img.alt)}" loading="lazy" decoding="async"></button>'
         for img in images
     )
     return f"""
@@ -544,7 +553,7 @@ def design_process_html(project: Project) -> str:
             f'<button class="{"active" if index == 0 else ""}" id="{tab_id}" type="button" role="tab" aria-controls="{panel_id}" aria-selected="{str(index == 0).lower()}">{html.escape(name)}</button>'
         )
         items = "\n".join(
-            f'<button class="gallery-item" type="button"><img src="{img.url}" alt="{html.escape(img.alt)}"></button>'
+            f'<button class="gallery-item" type="button"><img src="{img.url}" data-full-src="{img.full_url}" alt="{html.escape(img.alt)}" loading="lazy" decoding="async"></button>'
             for img in images
         )
         panels.append(
@@ -588,7 +597,7 @@ def build_project(project: Project, previous_project: Project | None, next_proje
     body = f"""
 <article class="project-page">
   <section class="project-hero">
-    <img src="{project.cover.url}" alt="{html.escape(project.display_name)}">
+    <img src="{project.cover.url}" alt="{html.escape(project.display_name)}" decoding="async" fetchpriority="high">
     <div>
       <p class="eyebrow">{html.escape(project.category)}</p>
       <h1>{html.escape(project.display_name)}</h1>

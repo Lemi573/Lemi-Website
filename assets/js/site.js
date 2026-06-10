@@ -60,10 +60,14 @@ if (!reduceMotion && "IntersectionObserver" in window) {
       entry.target.classList.add("is-visible");
       observer.unobserve(entry.target);
     });
-  }, { rootMargin: "0px 0px -10% 0px", threshold: 0.12 });
+  }, { rootMargin: "0px 0px 6% 0px", threshold: 0.04 });
 
   revealItems.forEach((item) => {
     item.classList.add("reveal");
+    if (item.getBoundingClientRect().top < window.innerHeight * 0.98) {
+      item.classList.add("is-visible");
+      return;
+    }
     revealObserver.observe(item);
   });
 }
@@ -92,27 +96,61 @@ function openLightbox(items, index) {
   const useThumbs = document.body.classList.contains("lightbox-thumbs-prototype");
   let current = index;
 
+  function updateControls() {
+    window.requestAnimationFrame(() => {
+      const rect = image.getBoundingClientRect();
+      const styles = window.getComputedStyle(lightbox);
+      const controlSize = Number.parseFloat(styles.getPropertyValue("--lightbox-control-size")) || 44;
+      const controlGap = Number.parseFloat(styles.getPropertyValue("--lightbox-control-gap")) || 24;
+      const closeGap = Number.parseFloat(styles.getPropertyValue("--lightbox-close-gap")) || 16;
+      const viewportPadding = Number.parseFloat(styles.getPropertyValue("--lightbox-viewport-padding")) || 12;
+      const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+      const maxLeft = window.innerWidth - controlSize - viewportPadding;
+      const prevLeft = clamp(rect.left - controlSize - controlGap, viewportPadding, maxLeft);
+      const nextLeft = clamp(rect.right + controlGap, viewportPadding, maxLeft);
+      const closeLeft = clamp(rect.right - controlSize, viewportPadding, maxLeft);
+      const closeTop = clamp(rect.top - controlSize - closeGap, viewportPadding, window.innerHeight - controlSize - viewportPadding);
+      lightbox.style.setProperty("--lightbox-image-left", `${Math.round(rect.left)}px`);
+      lightbox.style.setProperty("--lightbox-image-right", `${Math.round(window.innerWidth - rect.right)}px`);
+      lightbox.style.setProperty("--lightbox-image-top", `${Math.round(rect.top)}px`);
+      lightbox.style.setProperty("--lightbox-image-mid", `${Math.round(rect.top + rect.height / 2)}px`);
+      lightbox.style.setProperty("--lightbox-prev-left", `${Math.round(prevLeft)}px`);
+      lightbox.style.setProperty("--lightbox-next-left", `${Math.round(nextLeft)}px`);
+      lightbox.style.setProperty("--lightbox-close-left", `${Math.round(closeLeft)}px`);
+      lightbox.style.setProperty("--lightbox-close-top", `${Math.round(closeTop)}px`);
+    });
+  }
+
   function render() {
+    const nextSrc = items[current].dataset.fullSrc || items[current].src;
     if (useThumbs) {
       image.classList.add("lightbox-image-fade", "is-changing");
       window.setTimeout(() => {
-        image.src = items[current].src;
+        image.src = nextSrc;
         image.alt = items[current].alt;
+        image.onload = updateControls;
+        updateControls();
+        window.setTimeout(updateControls, 220);
         updateThumbs();
         image.classList.remove("is-changing");
       }, 150);
       return;
     }
-    image.src = items[current].src;
+    image.src = nextSrc;
     image.alt = items[current].alt;
+    image.onload = updateControls;
+    updateControls();
+    window.setTimeout(updateControls, 220);
   }
 
   function close() {
     lightbox.classList.remove("open");
     lightbox.setAttribute("aria-hidden", "true");
     image.removeAttribute("src");
+    image.onload = null;
     lightbox.querySelector(".lightbox-thumbs")?.remove();
     document.removeEventListener("keydown", onKeydown);
+    window.removeEventListener("resize", updateControls);
   }
 
   function move(delta) {
@@ -164,6 +202,7 @@ function openLightbox(items, index) {
   lightbox.classList.add("open");
   lightbox.setAttribute("aria-hidden", "false");
   document.addEventListener("keydown", onKeydown);
+  window.addEventListener("resize", updateControls, { passive: true });
   buildThumbs();
   render();
 }
