@@ -47,7 +47,6 @@ if (!reduceMotion && "IntersectionObserver" in window) {
     ".page-title",
     ".filters",
     ".project-hero",
-    ".project-info",
     ".project-section",
     ".cv-identity",
     ".cv-block",
@@ -64,6 +63,10 @@ if (!reduceMotion && "IntersectionObserver" in window) {
 
   revealItems.forEach((item) => {
     item.classList.add("reveal");
+    if (item.getBoundingClientRect().top < window.innerHeight * 0.98) {
+      item.classList.add("is-visible");
+      return;
+    }
     revealObserver.observe(item);
   });
 }

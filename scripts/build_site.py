@@ -355,8 +355,8 @@ def page(title: str, body: str, active: str = "", body_class: str = "") -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)} | Lemi Hadarau</title>
   <meta name="description" content="Architectural portfolio of Lemi Hadarau, Architect based in Ireland.">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=rollback-lightbox-1">
-  <script src="/assets/js/site.js?v=rollback-lightbox-1" defer></script>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=reveal-fix-1">
+  <script src="/assets/js/site.js?v=reveal-fix-1" defer></script>
 </head>
 <body{f' class="{html.escape(body_class)}"' if body_class else ''}>
   <header class="site-header">
