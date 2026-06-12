@@ -502,7 +502,7 @@ dd {
 
 .gallery-item {
   display: block;
-  flex: 0 0 min(520px, 74vw);
+  flex: 0 0 min(var(--gallery-item-width, 520px), 74vw);
   overflow: hidden;
   padding: 0;
   cursor: zoom-in;
@@ -512,9 +512,9 @@ dd {
 }
 
 .gallery-item img {
+  display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: contain;
+  height: auto;
   transition: opacity 220ms ease, transform 260ms ease;
 }
 

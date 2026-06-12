@@ -40,6 +40,8 @@ class ImageAsset:
     source: Path
     url: str
     alt: str
+    width: int
+    height: int
 
 
 @dataclass
@@ -123,6 +125,8 @@ def optimize_image(source: Path, width: int = 2200) -> ImageAsset:
     digest = hashlib.sha1(str(rel).encode("utf-8")).hexdigest()[:10]
     filename = f"{slugify(source.stem)}-{digest}.jpg"
     dest = GENERATED_ASSETS / filename
+    output_width = 0
+    output_height = 0
     if not dest.exists() or dest.stat().st_mtime < source.stat().st_mtime:
         dest.parent.mkdir(parents=True, exist_ok=True)
         with Image.open(source) as image:
@@ -132,8 +136,12 @@ def optimize_image(source: Path, width: int = 2200) -> ImageAsset:
             if image.width > width:
                 height = round(image.height * (width / image.width))
                 image = image.resize((width, height), Image.Resampling.LANCZOS)
+            output_width, output_height = image.size
             image.save(dest, "JPEG", quality=86, optimize=True, progressive=True)
-    return ImageAsset(source=source, url=output_path_to_url(dest), alt=source.stem)
+    if not output_width or not output_height:
+        with Image.open(dest) as image:
+            output_width, output_height = image.size
+    return ImageAsset(source=source, url=output_path_to_url(dest), alt=source.stem, width=output_width, height=output_height)
 
 
 def parse_project_info(path: Path) -> ProjectInfo:
@@ -355,8 +363,8 @@ def page(title: str, body: str, active: str = "", body_class: str = "") -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)} | Lemi Hadarau</title>
   <meta name="description" content="Architectural portfolio of Lemi Hadarau, Architect based in Ireland.">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=about-grid-15">
-  <script src="/assets/js/site.js?v=about-grid-15" defer></script>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=about-grid-16">
+  <script src="/assets/js/site.js?v=about-grid-16" defer></script>
 </head>
 <body{f' class="{html.escape(body_class)}"' if body_class else ''}>
   <header class="site-header">
@@ -434,7 +442,7 @@ def build_home(projects: list[Project]) -> None:
     about = read_about()
     portrait = about_portrait()
     if portrait:
-        portrait_html = f'<div class="portrait-crop"><img src="{portrait.url}?v=about-grid-15" alt="Black and white portrait of Lemi Hadarau"></div>'
+        portrait_html = f'<div class="portrait-crop"><img src="{portrait.url}?v=about-grid-16" alt="Black and white portrait of Lemi Hadarau"></div>'
     else:
         portrait_html = '<div class="portrait-placeholder">Portrait image<br>to be added</div>'
     featured = "\n".join(project_card(project) for project in projects[:5])
@@ -482,13 +490,19 @@ def meta_grid(project: Project) -> str:
     )
 
 
+def gallery_item_html(img: ImageAsset) -> str:
+    ratio = img.width / img.height if img.height else 4 / 3
+    item_width = round(min(520, max(180, ratio * 390)))
+    return (
+        f'<button class="gallery-item" type="button" style="--gallery-item-width: {item_width}px;">'
+        f'<img src="{img.url}" alt="{html.escape(img.alt)}"></button>'
+    )
+
+
 def gallery_html(name: str, images: list[ImageAsset]) -> str:
     if not images:
         return ""
-    items = "\n".join(
-        f'<button class="gallery-item" type="button"><img src="{img.url}" alt="{html.escape(img.alt)}"></button>'
-        for img in images
-    )
+    items = "\n".join(gallery_item_html(img) for img in images)
     return f"""
 <section class="project-section">
   <h2>{html.escape(name)}</h2>
@@ -528,7 +542,7 @@ def before_after_html(pairs: list[BeforeAfterPair]) -> str:
 <section class="project-section before-after-section tabbed-section">
   <h2>Photomontages</h2>
   <div class="tabs" role="tablist">{"".join(tabs)}</div>
-  {"".join(panels)}
+{"".join(panels)}
 </section>"""
 
 
@@ -543,10 +557,7 @@ def design_process_html(project: Project) -> str:
         tabs.append(
             f'<button class="{"active" if index == 0 else ""}" id="{tab_id}" type="button" role="tab" aria-controls="{panel_id}" aria-selected="{str(index == 0).lower()}">{html.escape(name)}</button>'
         )
-        items = "\n".join(
-            f'<button class="gallery-item" type="button"><img src="{img.url}" alt="{html.escape(img.alt)}"></button>'
-            for img in images
-        )
+        items = "\n".join(gallery_item_html(img) for img in images)
         panels.append(
             f'<div class="tab-panel {"active" if index == 0 else ""}" id="{panel_id}" role="tabpanel" aria-labelledby="{tab_id}"><div class="gallery-grid">{items}</div></div>'
         )
