@@ -23,6 +23,36 @@ document.addEventListener("click", (event) => {
   }
 });
 
+const aboutIntro = document.querySelector(".home-intro");
+
+if (aboutIntro) {
+  const portraitImage = aboutIntro.querySelector(".portrait-crop img");
+  const introCopy = aboutIntro.querySelector(".intro-copy");
+  const compactAbout = window.matchMedia("(max-width: 920px)");
+  const syncAboutGrid = () => {
+    if (!portraitImage || !introCopy) return;
+    if (compactAbout.matches || !portraitImage.naturalHeight) {
+      aboutIntro.style.removeProperty("--about-hair-offset");
+      aboutIntro.style.removeProperty("--about-portrait-width");
+      return;
+    }
+    const hairTop = 148;
+    const visibleRatio = (portraitImage.naturalHeight - hairTop) / portraitImage.naturalHeight;
+    const copyHeight = introCopy.getBoundingClientRect().height;
+    const imageHeight = copyHeight / visibleRatio;
+    const imageWidth = imageHeight * (portraitImage.naturalWidth / portraitImage.naturalHeight);
+    const hairOffset = imageHeight * (hairTop / portraitImage.naturalHeight);
+    aboutIntro.style.setProperty("--about-hair-offset", `${hairOffset}px`);
+    aboutIntro.style.setProperty("--about-portrait-width", `${imageWidth}px`);
+  };
+
+  syncAboutGrid();
+  portraitImage.addEventListener("load", syncAboutGrid);
+  window.addEventListener("resize", syncAboutGrid);
+  window.addEventListener("load", syncAboutGrid);
+  document.fonts?.ready.then(syncAboutGrid);
+}
+
 const hero = document.querySelector(".project-hero img");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 

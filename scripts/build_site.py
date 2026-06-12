@@ -355,8 +355,8 @@ def page(title: str, body: str, active: str = "", body_class: str = "") -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)} | Lemi Hadarau</title>
   <meta name="description" content="Architectural portfolio of Lemi Hadarau, Architect based in Ireland.">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=lightbox-controls-3">
-  <script src="/assets/js/site.js?v=lightbox-controls-3" defer></script>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=about-grid-10">
+  <script src="/assets/js/site.js?v=about-grid-10" defer></script>
 </head>
 <body{f' class="{html.escape(body_class)}"' if body_class else ''}>
   <header class="site-header">
@@ -434,7 +434,7 @@ def build_home(projects: list[Project]) -> None:
     about = read_about()
     portrait = about_portrait()
     if portrait:
-        portrait_html = f'<img src="{portrait.url}" alt="Black and white portrait of Lemi Hadarau">'
+        portrait_html = f'<div class="portrait-crop"><img src="{portrait.url}?v=about-grid-10" alt="Black and white portrait of Lemi Hadarau"></div>'
     else:
         portrait_html = '<div class="portrait-placeholder">Portrait image<br>to be added</div>'
     featured = "\n".join(project_card(project) for project in projects[:5])
@@ -446,6 +446,7 @@ def build_home(projects: list[Project]) -> None:
     <figcaption>
       <strong>Lemi Hadarau</strong>
       <span>Registered Architect MRIAI</span>
+      <span>M.Arch, BSc Arch Sc</span>
     </figcaption>
   </figure>
   <div class="intro-content">
@@ -459,8 +460,7 @@ def build_home(projects: list[Project]) -> None:
 </section>
 <section class="section featured-section">
   <div class="section-heading">
-    <p class="eyebrow">Selected work</p>
-    <h2>Commercial Projects</h2>
+    <p class="eyebrow selected-projects-label">Selected Projects</p>
   </div>
   <div class="featured-row">{featured}</div>
 </section>
