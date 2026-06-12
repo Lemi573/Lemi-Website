@@ -1261,9 +1261,64 @@ dd {
     flex-direction: column;
   }
 
+  .home-intro {
+    row-gap: 14px;
+    padding: 36px 0 34px;
+  }
+
+  .about-heading {
+    padding-bottom: 0;
+  }
+
+  .portrait-frame figcaption {
+    margin-top: 12px;
+  }
+
+  .page-title {
+    padding: 36px 0 18px;
+  }
+
+  .page-title h1 {
+    margin-bottom: 0;
+    font-size: 34px;
+    letter-spacing: 0;
+    line-height: 1;
+  }
+
+  .page-title p:not(.eyebrow) {
+    display: none;
+  }
+
+  .filters {
+    gap: 14px 24px;
+    padding: 14px 0 28px;
+  }
+
+  .project-grid {
+    padding-top: 0;
+  }
+
+  .intro-content.reveal,
+  .project-card.reveal,
+  .project-hero.reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .project-hero img {
+    transform: none;
+    transition: none;
+  }
+
   .featured-row,
   .project-grid {
     grid-template-columns: 1fr;
+  }
+
+  .project-card:hover img {
+    filter: none;
+    transform: none;
   }
 
   .project-card-title {
@@ -1272,6 +1327,7 @@ dd {
     transform: none;
     min-width: 0;
     opacity: 1;
+    padding: 18px 0 0;
     background: #fff;
     text-align: left;
   }
@@ -1336,11 +1392,14 @@ dd {
   .lightbox-next {
     position: static;
     transform: none;
-    padding: 6px 9px;
-    border-color: #dedede;
-    background: rgba(255, 255, 255, 0.92);
-    font-size: 12px;
-    line-height: 1.25;
+    padding: 0 0 4px;
+    border: 0;
+    border-bottom: 1px solid currentColor;
+    background: transparent;
+    color: var(--text);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
   }
 
   .lightbox-close {
@@ -1350,8 +1409,8 @@ dd {
 
   .lightbox-prev,
   .lightbox-next {
-    width: 100%;
-    max-width: 82px;
+    width: auto;
+    max-width: none;
     text-align: center;
   }
 
