@@ -266,63 +266,7 @@ h2 {
 }
 
 .featured-section {
-  padding-top: 100px;
-}
-
-@media (min-height: 1000px) {
-  .featured-section {
-    padding-top: clamp(46px, 6vh, 76px);
-  }
-}
-
-@media (min-height: 1300px) {
-  .featured-section {
-    padding-top: 280px;
-  }
-}
-
-@media (min-width: 1100px) and (max-height: 1100px) {
-  .home-intro {
-    row-gap: 12px;
-    padding: clamp(24px, 4vh, 38px) 0 0;
-  }
-
-  .about-heading {
-    padding-bottom: clamp(6px, 1.5vh, 14px);
-  }
-
-  .portrait-crop {
-    width: min(92%, var(--about-portrait-width, 100%));
-  }
-
-  .intro-copy {
-    font-size: 16px;
-    line-height: 1.48;
-  }
-
-  .intro-copy p {
-    margin-bottom: 18px;
-  }
-
-  .featured-section {
-    padding-top: 14px;
-  }
-
-  .featured-section .section-heading {
-    margin-bottom: 14px;
-    padding-top: 14px;
-  }
-}
-
-@media (min-width: 1600px) and (min-height: 1200px) and (max-height: 1500px) {
-  .featured-section {
-    padding-top: clamp(120px, 10vh, 150px);
-  }
-
-  .featured-section .section-heading {
-    margin-bottom: 20px;
-    padding-top: 18px;
-  }
+  padding-top: clamp(54px, 7vh, 118px);
 }
 
 .section-heading {
@@ -343,6 +287,50 @@ h2 {
 .selected-projects-label {
   margin: 0;
   color: var(--text);
+}
+
+@media (min-width: 1100px) and (max-height: 1100px) {
+  .home-intro {
+    row-gap: 12px;
+    padding: clamp(24px, 4vh, 38px) 0 0;
+  }
+
+  .about-heading {
+    padding-bottom: clamp(6px, 1.5vh, 14px);
+  }
+
+  .portrait-crop {
+    width: min(82%, var(--about-portrait-width, 100%));
+  }
+
+  .intro-copy {
+    font-size: 16px;
+    line-height: 1.48;
+  }
+
+  .intro-copy p {
+    margin-bottom: 16px;
+  }
+
+  .featured-section {
+    padding-top: clamp(22px, 4vh, 42px);
+  }
+
+  .featured-section .section-heading {
+    margin-bottom: 4px;
+    padding-top: clamp(16px, 3vh, 28px);
+  }
+}
+
+@media (min-width: 1600px) and (min-height: 1101px) {
+  .featured-section {
+    padding-top: clamp(70px, 6vh, 130px);
+  }
+
+  .featured-section .section-heading {
+    margin-bottom: 20px;
+    padding-top: clamp(18px, 2.2vh, 30px);
+  }
 }
 
 .featured-row,

@@ -355,8 +355,8 @@ def page(title: str, body: str, active: str = "", body_class: str = "") -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)} | Lemi Hadarau</title>
   <meta name="description" content="Architectural portfolio of Lemi Hadarau, Architect based in Ireland.">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=about-grid-10">
-  <script src="/assets/js/site.js?v=about-grid-10" defer></script>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=about-grid-12">
+  <script src="/assets/js/site.js?v=about-grid-12" defer></script>
 </head>
 <body{f' class="{html.escape(body_class)}"' if body_class else ''}>
   <header class="site-header">
@@ -434,7 +434,7 @@ def build_home(projects: list[Project]) -> None:
     about = read_about()
     portrait = about_portrait()
     if portrait:
-        portrait_html = f'<div class="portrait-crop"><img src="{portrait.url}?v=about-grid-10" alt="Black and white portrait of Lemi Hadarau"></div>'
+        portrait_html = f'<div class="portrait-crop"><img src="{portrait.url}?v=about-grid-12" alt="Black and white portrait of Lemi Hadarau"></div>'
     else:
         portrait_html = '<div class="portrait-placeholder">Portrait image<br>to be added</div>'
     featured = "\n".join(project_card(project) for project in projects[:5])
