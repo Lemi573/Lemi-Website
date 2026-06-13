@@ -19,9 +19,12 @@ CONTACT_FILE = ROOT / "4 Contact" / "Contact.txt"
 CV_FILE = ROOT / "2 CV" / "Lemi_Hadarau_CV.docx"
 GENERATED_ASSETS = ROOT / "assets" / "generated"
 IMAGE_PIPELINE_VERSION = "image-pipeline-2"
+ASSET_VERSION = "project-spacing-5"
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 ENABLED_CATEGORIES = {"Commercial", "Retail", "Office Fit Out", "Public", "Residential"}
+ALL_PROJECT_OPENING_CODES = ["21123", "18135", "07", "23111", "19115", "23128", "22133", "15152", "19102", "001"]
+ALL_PROJECT_END_CODES = ["10", "21102", "22112", "18145", "23135"]
 
 
 @dataclass
@@ -419,8 +422,8 @@ def page(title: str, body: str, active: str = "", body_class: str = "") -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)} | Lemi Hadarau</title>
   <meta name="description" content="Architectural portfolio of Lemi Hadarau, Architect based in Ireland.">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=about-grid-20">
-  <script src="/assets/js/site.js?v=about-grid-20" defer></script>
+  <link rel="stylesheet" href="/assets/css/styles.css?v={ASSET_VERSION}">
+  <script src="/assets/js/site.js?v={ASSET_VERSION}" defer></script>
 </head>
 <body{f' class="{html.escape(body_class)}"' if body_class else ''}>
   <header class="site-header">
@@ -494,11 +497,54 @@ def project_filters(projects: list[Project], active_slug: str = "all") -> str:
     return "\n".join(links)
 
 
+def project_code(project: Project) -> str:
+    return project_reference(project.source)
+
+
+def ordered_all_projects(projects: list[Project]) -> list[Project]:
+    projects_by_code: dict[str, Project] = {}
+    for project in projects:
+        code = project_code(project)
+        if code in projects_by_code:
+            raise ValueError(f"Duplicate project code in All ordering: {code}")
+        projects_by_code[code] = project
+
+    fixed_codes = ALL_PROJECT_OPENING_CODES + ALL_PROJECT_END_CODES
+    duplicate_fixed_codes = sorted({code for code in fixed_codes if fixed_codes.count(code) > 1})
+    if duplicate_fixed_codes:
+        raise ValueError(f"Duplicate fixed All project code(s): {', '.join(duplicate_fixed_codes)}")
+
+    missing_codes = [code for code in fixed_codes if code not in projects_by_code]
+    if missing_codes:
+        raise ValueError(f"Missing fixed All project code(s): {', '.join(missing_codes)}")
+
+    ordered = [projects_by_code[code] for code in ALL_PROJECT_OPENING_CODES]
+    excluded_codes = set(fixed_codes)
+    remaining_by_category: dict[str, list[Project]] = {}
+    for project in projects:
+        if project_code(project) in excluded_codes:
+            continue
+        remaining_by_category.setdefault(project.category_slug, []).append(project)
+
+    category_slugs = [category_slug for _, category_slug in project_categories(projects)]
+    if ordered and ordered[-1].category_slug in category_slugs:
+        start_index = category_slugs.index(ordered[-1].category_slug) + 1
+        category_slugs = category_slugs[start_index:] + category_slugs[:start_index]
+
+    while any(remaining_by_category.values()):
+        for category_slug in category_slugs:
+            if remaining_by_category.get(category_slug):
+                ordered.append(remaining_by_category[category_slug].pop(0))
+
+    ordered.extend(projects_by_code[code] for code in ALL_PROJECT_END_CODES)
+    return ordered
+
+
 def build_home(projects: list[Project]) -> None:
     about = read_about()
     portrait = about_portrait()
     if portrait:
-        portrait_html = f'<div class="portrait-crop"><img src="{portrait.url}?v=about-grid-20" alt="Black and white portrait of Lemi Hadarau"></div>'
+        portrait_html = f'<div class="portrait-crop"><img src="{portrait.url}?v={ASSET_VERSION}" alt="Black and white portrait of Lemi Hadarau"></div>'
     else:
         portrait_html = '<div class="portrait-placeholder">Portrait image<br>to be added</div>'
     featured = "\n".join(project_card(project) for project in projects[:5])
@@ -746,23 +792,22 @@ def build_project(project: Project, previous_project: Project | None, next_proje
 
 def build_projects_listing(projects: list[Project], visible_projects: list[Project], active_slug: str, title: str, intro: str, output_path: Path) -> None:
     cards = "\n".join(project_card(project) for project in visible_projects)
+    intro_html = f"\n  <p>{html.escape(intro)}</p>" if intro else ""
     body = f"""
-<section class="section page-title">
+<section class="section page-title projects-listing-title">
   <p class="eyebrow">Projects</p>
-  <h1>{html.escape(title)}</h1>
-  <p>{html.escape(intro)}</p>
+  <h1>{html.escape(title)}</h1>{intro_html}
 </section>
-<section class="section filters" aria-label="Project categories">
+<section class="section filters projects-listing-filters" aria-label="Project categories">
   {project_filters(projects, active_slug)}
 </section>
-<section class="section project-grid">{cards}</section>
+<section class="section project-grid projects-listing-grid">{cards}</section>
 """
     write(output_path, page("Projects", body, active="projects"))
 
 
 def build_projects_index(projects: list[Project]) -> None:
-    intro = "Selected project work across Commercial, Retail, Office Fit Out, Public and Residential."
-    build_projects_listing(projects, projects, "all", "Selected architectural work", intro, ROOT / "projects" / "index.html")
+    build_projects_listing(projects, ordered_all_projects(projects), "all", "Selected architectural work", "", ROOT / "projects" / "index.html")
 
 
 def build_category_indexes(projects: list[Project]) -> None:

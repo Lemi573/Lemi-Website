@@ -404,6 +404,26 @@ h2 {
   font-size: 17px;
 }
 
+.projects-listing-title {
+  padding-bottom: 48px;
+}
+
+.projects-listing-title .eyebrow {
+  margin-bottom: 76px;
+}
+
+.projects-listing-title h1 {
+  margin-bottom: 0;
+}
+
+.projects-listing-filters {
+  padding: 34px 0 42px;
+}
+
+.projects-listing-grid {
+  padding-top: 42px;
+}
+
 .project-hero {
   display: grid;
   grid-template-columns: 1fr;
