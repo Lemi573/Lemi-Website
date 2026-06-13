@@ -18,6 +18,7 @@ ABOUT_ROOT = ROOT / "1 About"
 CONTACT_FILE = ROOT / "4 Contact" / "Contact.txt"
 CV_FILE = ROOT / "2 CV" / "Lemi_Hadarau_CV.docx"
 GENERATED_ASSETS = ROOT / "assets" / "generated"
+IMAGE_PIPELINE_VERSION = "image-pipeline-2"
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 ENABLED_CATEGORIES = {"Commercial", "Retail", "Office Fit Out", "Public", "Residential"}
@@ -50,6 +51,15 @@ class BeforeAfterPair:
     existing: ImageAsset
     proposed: ImageAsset
     orientation: str
+    existing_label: str = "Existing"
+    proposed_label: str = "Proposed"
+
+
+@dataclass
+class GalleryTab:
+    title: str
+    images: list[ImageAsset]
+    material_studies: list[BeforeAfterPair] = field(default_factory=list)
 
 
 @dataclass
@@ -65,6 +75,7 @@ class Project:
     sections: dict[str, list[ImageAsset]]
     before_after: list[BeforeAfterPair]
     design_iterations: dict[str, list[ImageAsset]]
+    visualisation_tabs: list[GalleryTab]
 
 
 def read_text(path: Path) -> str:
@@ -88,6 +99,12 @@ def leading_number(path: Path) -> int:
 
 def strip_leading_number(name: str) -> str:
     return re.sub(r"^\s*\d+\s*", "", name).strip()
+
+
+def display_folder_name(name: str) -> str:
+    cleaned = re.sub(r"^\s*\(\s*\d+\s*\)\s*", "", name).strip()
+    cleaned = re.sub(r"^\s*\d+\s*[-_.]?\s*", "", cleaned).strip()
+    return cleaned or name.strip()
 
 
 def bracket_name(name: str) -> str:
@@ -120,9 +137,15 @@ def output_path_to_url(path: Path) -> str:
     return "/" + path.relative_to(ROOT).as_posix()
 
 
+def source_digest(source: Path) -> str:
+    stat = source.stat()
+    rel = source.relative_to(ROOT).as_posix()
+    payload = f"{IMAGE_PIPELINE_VERSION}|{rel}|{stat.st_size}|{stat.st_mtime_ns}"
+    return hashlib.sha1(payload.encode("utf-8")).hexdigest()[:10]
+
+
 def optimize_image(source: Path, width: int = 2200) -> ImageAsset:
-    rel = source.relative_to(ROOT)
-    digest = hashlib.sha1(str(rel).encode("utf-8")).hexdigest()[:10]
+    digest = source_digest(source)
     filename = f"{slugify(source.stem)}-{digest}.jpg"
     dest = GENERATED_ASSETS / filename
     output_width = 0
@@ -205,30 +228,46 @@ def direct_image_files(path: Path) -> list[Path]:
 
 
 def before_after_marker(path: Path) -> str:
-    if re.search(r"\bexisting\b", path.stem, re.IGNORECASE):
+    if re.search(r"(^|[^a-z0-9])existing([^a-z0-9]|$)", path.stem, re.IGNORECASE):
         return "existing"
-    if re.search(r"\bproposed\b", path.stem, re.IGNORECASE):
+    if re.search(r"(^|[^a-z0-9])proposed([^a-z0-9]|$)", path.stem, re.IGNORECASE):
         return "proposed"
     return ""
 
 
 def before_after_key(path: Path) -> str:
-    key = re.sub(r"\b(existing|proposed)\b", "", path.stem, flags=re.IGNORECASE)
+    key = re.sub(r"(^|[^a-z0-9])(existing|proposed)([^a-z0-9]|$)", " ", path.stem, flags=re.IGNORECASE)
     key = re.sub(r"\b\d+\b", "", key)
     key = re.sub(r"[-_]+", " ", key)
     key = re.sub(r"\s+", " ", key).strip()
     return key or path.parent.name
 
 
+def pair_orientation(existing: Path, proposed: Path) -> str:
+    with Image.open(existing) as existing_image, Image.open(proposed) as proposed_image:
+        width = min(existing_image.width, proposed_image.width)
+        height = min(existing_image.height, proposed_image.height)
+    return "portrait" if height > width else "landscape"
+
+
+def material_study_pair(folder: Path) -> BeforeAfterPair | None:
+    files = image_files(folder)
+    if len(files) != 2:
+        return None
+    first, second = sorted(files, key=lambda p: natural_key(p.name))
+    return BeforeAfterPair(
+        title=display_folder_name(folder.name),
+        existing=optimize_image(first),
+        proposed=optimize_image(second),
+        orientation=pair_orientation(first, second),
+        existing_label="",
+        proposed_label="",
+    )
+
+
 def photomontage_before_after(section_path: Path) -> tuple[list[BeforeAfterPair], list[Path]]:
     pairs: list[BeforeAfterPair] = []
     used: set[Path] = set()
-
-    def pair_orientation(existing: Path, proposed: Path) -> str:
-        with Image.open(existing) as existing_image, Image.open(proposed) as proposed_image:
-            width = min(existing_image.width, proposed_image.width)
-            height = min(existing_image.height, proposed_image.height)
-        return "portrait" if height > width else "landscape"
 
     for folder in sorted([p for p in section_path.iterdir() if p.is_dir()], key=lambda p: natural_key(p.name)):
         files = image_files(folder)
@@ -303,16 +342,32 @@ def load_projects() -> list[Project]:
             sections: dict[str, list[ImageAsset]] = {}
             before_after: list[BeforeAfterPair] = []
             design_iterations: dict[str, list[ImageAsset]] = {}
+            visualisation_tabs: list[GalleryTab] = []
             for section_path in sorted([p for p in project_path.iterdir() if p.is_dir()], key=lambda p: natural_key(p.name)):
                 if section_path.name.lower() == "visualisations":
-                    iteration_dirs = [
-                        p for p in section_path.iterdir() if p.is_dir() and re.search(r"design iteration", p.name, re.IGNORECASE)
-                    ]
+                    visualisation_dirs = [p for p in section_path.iterdir() if p.is_dir()]
+                    iteration_dirs = [p for p in visualisation_dirs if re.search(r"design iteration", p.name, re.IGNORECASE)]
+                    tab_dirs = [p for p in visualisation_dirs if p not in iteration_dirs]
                     for iteration in sorted(iteration_dirs, key=lambda p: natural_key(p.name)):
                         design_iterations[iteration.name] = [optimize_image(img) for img in image_files(iteration)]
-                    normal_visuals = [
-                        p for p in image_files(section_path) if not any(p.is_relative_to(iteration) for iteration in iteration_dirs)
-                    ]
+                    for tab_dir in sorted(tab_dirs, key=lambda p: natural_key(p.name)):
+                        material_dirs = [p for p in tab_dir.iterdir() if p.is_dir() and re.search(r"(material stud|comparison)", p.name, re.IGNORECASE)]
+                        material_studies = [
+                            pair for pair in (material_study_pair(folder) for folder in sorted(material_dirs, key=lambda p: natural_key(p.name))) if pair
+                        ]
+                        tab_images = [
+                            optimize_image(img)
+                            for img in direct_image_files(tab_dir)
+                        ]
+                        if tab_images or material_studies:
+                            visualisation_tabs.append(
+                                GalleryTab(
+                                    title=display_folder_name(tab_dir.name),
+                                    images=tab_images,
+                                    material_studies=material_studies,
+                                )
+                            )
+                    normal_visuals = direct_image_files(section_path)
                     if normal_visuals:
                         sections["Visualisations"] = [optimize_image(img) for img in normal_visuals]
                     continue
@@ -341,6 +396,7 @@ def load_projects() -> list[Project]:
                     sections=sections,
                     before_after=before_after,
                     design_iterations=design_iterations,
+                    visualisation_tabs=visualisation_tabs,
                 )
             )
     return projects
@@ -363,8 +419,8 @@ def page(title: str, body: str, active: str = "", body_class: str = "") -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)} | Lemi Hadarau</title>
   <meta name="description" content="Architectural portfolio of Lemi Hadarau, Architect based in Ireland.">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=about-grid-16">
-  <script src="/assets/js/site.js?v=about-grid-16" defer></script>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=about-grid-20">
+  <script src="/assets/js/site.js?v=about-grid-20" defer></script>
 </head>
 <body{f' class="{html.escape(body_class)}"' if body_class else ''}>
   <header class="site-header">
@@ -442,7 +498,7 @@ def build_home(projects: list[Project]) -> None:
     about = read_about()
     portrait = about_portrait()
     if portrait:
-        portrait_html = f'<div class="portrait-crop"><img src="{portrait.url}?v=about-grid-16" alt="Black and white portrait of Lemi Hadarau"></div>'
+        portrait_html = f'<div class="portrait-crop"><img src="{portrait.url}?v=about-grid-20" alt="Black and white portrait of Lemi Hadarau"></div>'
     else:
         portrait_html = '<div class="portrait-placeholder">Portrait image<br>to be added</div>'
     featured = "\n".join(project_card(project) for project in projects[:5])
@@ -510,6 +566,31 @@ def gallery_html(name: str, images: list[ImageAsset]) -> str:
 </section>"""
 
 
+def before_after_figure_html(pair: BeforeAfterPair) -> str:
+    existing_label = (
+        f'\n        <span class="before-after-label before-after-label-existing">{html.escape(pair.existing_label)}</span>'
+        if pair.existing_label
+        else ""
+    )
+    proposed_label = (
+        f'\n        <span class="before-after-label before-after-label-proposed">{html.escape(pair.proposed_label)}</span>'
+        if pair.proposed_label
+        else ""
+    )
+    labels = existing_label + proposed_label
+    return f"""
+    <figure class="before-after before-after-{html.escape(pair.orientation)}" style="--before-after-position: 50%">
+      <div class="before-after-media">
+        <img src="{pair.existing.url}" alt="{html.escape(pair.existing.alt)}">
+        <div class="before-after-overlay">
+          <img src="{pair.proposed.url}" alt="{html.escape(pair.proposed.alt)}">
+        </div>{labels}
+        <div class="before-after-divider" aria-hidden="true"><span></span></div>
+        <input class="before-after-range" type="range" min="0" max="100" value="50" aria-label="{html.escape(pair.title)} before and after comparison">
+      </div>
+    </figure>"""
+
+
 def before_after_html(pairs: list[BeforeAfterPair]) -> str:
     if not pairs:
         return ""
@@ -524,25 +605,14 @@ def before_after_html(pairs: list[BeforeAfterPair]) -> str:
         panels.append(
             f"""
   <div class="tab-panel {"active" if index == 0 else ""}" id="{panel_id}" role="tabpanel" aria-labelledby="{tab_id}">
-    <figure class="before-after before-after-{html.escape(pair.orientation)}" style="--before-after-position: 50%">
-      <div class="before-after-media">
-        <img src="{pair.existing.url}" alt="{html.escape(pair.existing.alt)}">
-        <div class="before-after-overlay">
-          <img src="{pair.proposed.url}" alt="{html.escape(pair.proposed.alt)}">
-        </div>
-        <span class="before-after-label before-after-label-existing">Existing</span>
-        <span class="before-after-label before-after-label-proposed">Proposed</span>
-        <div class="before-after-divider" aria-hidden="true"><span></span></div>
-        <input class="before-after-range" type="range" min="0" max="100" value="50" aria-label="{html.escape(pair.title)} before and after comparison">
-      </div>
-    </figure>
+{before_after_figure_html(pair)}
   </div>"""
         )
     return f"""
 <section class="project-section before-after-section tabbed-section">
   <h2>Photomontages</h2>
   <div class="tabs" role="tablist">{"".join(tabs)}</div>
-{"".join(panels)}
+  <div class="tab-panels">{"".join(panels)}</div>
 </section>"""
 
 
@@ -565,7 +635,57 @@ def design_process_html(project: Project) -> str:
 <section class="project-section design-process tabbed-section">
   <h2>Design Process</h2>
   <div class="tabs" role="tablist">{"".join(tabs)}</div>
-  {"".join(panels)}
+  <div class="tab-panels">{"".join(panels)}</div>
+</section>"""
+
+
+def material_studies_html(studies: list[BeforeAfterPair], base_id: str) -> str:
+    if not studies:
+        return ""
+    tabs = []
+    panels = []
+    for index, study in enumerate(studies):
+        tab_id = f"{base_id}-tab-{index}"
+        panel_id = f"{base_id}-panel-{index}"
+        tabs.append(
+            f'<button class="{"active" if index == 0 else ""}" id="{tab_id}" type="button" role="tab" aria-controls="{panel_id}" aria-selected="{str(index == 0).lower()}">{html.escape(study.title)}</button>'
+        )
+        panels.append(
+            f"""
+      <div class="tab-panel {"active" if index == 0 else ""}" id="{panel_id}" role="tabpanel" aria-labelledby="{tab_id}">
+{before_after_figure_html(study)}
+      </div>"""
+        )
+    return f"""
+    <div class="material-studies tabbed-section">
+      <h3>Material Studies - Master Bathroom</h3>
+      <div class="tabs material-study-tabs" role="tablist">{"".join(tabs)}</div>
+      <div class="tab-panels">{"".join(panels)}</div>
+    </div>"""
+
+
+def tabbed_gallery_html(project: Project, title: str, groups: list[GalleryTab], class_name: str) -> str:
+    if not groups:
+        return ""
+    tabs = []
+    panels = []
+    base_id = slugify(title)
+    for index, group in enumerate(groups):
+        tab_id = f"{project.slug}-{base_id}-tab-{index}"
+        panel_id = f"{project.slug}-{base_id}-panel-{index}"
+        tabs.append(
+            f'<button class="{"active" if index == 0 else ""}" id="{tab_id}" type="button" role="tab" aria-controls="{panel_id}" aria-selected="{str(index == 0).lower()}">{html.escape(group.title)}</button>'
+        )
+        gallery = f'<div class="gallery-grid">{"".join(gallery_item_html(img) for img in group.images)}</div>' if group.images else ""
+        material_studies = material_studies_html(group.material_studies, f"{panel_id}-material-studies")
+        panels.append(
+            f'<div class="tab-panel {"active" if index == 0 else ""}" id="{panel_id}" role="tabpanel" aria-labelledby="{tab_id}">{gallery}{material_studies}</div>'
+        )
+    return f"""
+<section class="project-section {html.escape(class_name)} tabbed-section">
+  <h2>{html.escape(title)}</h2>
+  <div class="tabs" role="tablist">{"".join(tabs)}</div>
+  <div class="tab-panels">{"".join(panels)}</div>
 </section>"""
 
 
@@ -574,6 +694,8 @@ def build_project(project: Project, previous_project: Project | None, next_proje
     galleries = []
     if project.before_after:
         galleries.append(before_after_html(project.before_after))
+    if project.visualisation_tabs:
+        galleries.append(tabbed_gallery_html(project, "Visualisations", project.visualisation_tabs, "visualisations-tabs"))
     for section in section_order:
         if section in project.sections:
             galleries.append(gallery_html(section, project.sections[section]))

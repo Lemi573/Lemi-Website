@@ -1,14 +1,17 @@
 document.addEventListener("click", (event) => {
   const tab = event.target.closest(".tabs button");
   if (tab) {
-    const tabs = tab.parentElement.querySelectorAll("button");
+    const tabs = tab.parentElement.querySelectorAll(":scope > button");
     const section = tab.closest(".tabbed-section");
     if (!section) return;
+    const panelRoot = tab.parentElement.nextElementSibling?.classList.contains("tab-panels")
+      ? tab.parentElement.nextElementSibling
+      : section;
     tabs.forEach((item) => {
       item.classList.toggle("active", item === tab);
       item.setAttribute("aria-selected", item === tab ? "true" : "false");
     });
-    section.querySelectorAll(".tab-panel").forEach((panel) => {
+    panelRoot.querySelectorAll(":scope > .tab-panel").forEach((panel) => {
       panel.classList.toggle("active", panel.id === tab.getAttribute("aria-controls"));
     });
     return;

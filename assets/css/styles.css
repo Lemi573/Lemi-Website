@@ -662,6 +662,42 @@ dd {
   margin-bottom: clamp(22px, 3vw, 34px);
 }
 
+.material-studies {
+  display: grid;
+  gap: clamp(18px, 2.8vw, 28px);
+  margin-top: clamp(34px, 5vw, 58px);
+}
+
+.material-studies h3,
+.material-study h4 {
+  margin: 0;
+}
+
+.material-studies h3 {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.material-study-tabs {
+  margin-bottom: 0;
+}
+
+.material-study {
+  display: grid;
+  gap: 16px;
+}
+
+.material-study h4 {
+  font-size: clamp(18px, 2vw, 24px);
+  line-height: 1.15;
+}
+
+.material-study .before-after {
+  margin: 0;
+}
+
 .tabs {
   display: flex;
   flex-wrap: wrap;
