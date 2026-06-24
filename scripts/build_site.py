@@ -19,7 +19,7 @@ CONTACT_FILE = ROOT / "4 Contact" / "Contact.txt"
 CV_FILE = ROOT / "2 CV" / "Lemi_Hadarau_CV.docx"
 GENERATED_ASSETS = ROOT / "assets" / "generated"
 IMAGE_PIPELINE_VERSION = "image-pipeline-2"
-ASSET_VERSION = "project-spacing-5"
+ASSET_VERSION = "mobile-about-links-1"
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 ENABLED_CATEGORIES = {"Commercial", "Retail", "Office Fit Out", "Public", "Residential"}
