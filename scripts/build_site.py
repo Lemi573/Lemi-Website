@@ -25,6 +25,7 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 ENABLED_CATEGORIES = {"Commercial", "Retail", "Office Fit Out", "Public", "Residential"}
 ALL_PROJECT_OPENING_CODES = ["21123", "18135", "07", "23111", "19115", "23128", "22133", "15152", "19102", "001"]
 ALL_PROJECT_END_CODES = ["10", "21102", "22112", "18145", "23135"]
+SELECTED_PROJECT_CODES = ["18135", "23111", "21123", "07", "25116"]
 
 
 @dataclass
@@ -540,6 +541,14 @@ def ordered_all_projects(projects: list[Project]) -> list[Project]:
     return ordered
 
 
+def selected_home_projects(projects: list[Project]) -> list[Project]:
+    projects_by_code = {project_code(project): project for project in projects}
+    missing_codes = [code for code in SELECTED_PROJECT_CODES if code not in projects_by_code]
+    if missing_codes:
+        raise ValueError(f"Missing selected project code(s): {', '.join(missing_codes)}")
+    return [projects_by_code[code] for code in SELECTED_PROJECT_CODES]
+
+
 def build_home(projects: list[Project]) -> None:
     about = read_about()
     portrait = about_portrait()
@@ -547,7 +556,7 @@ def build_home(projects: list[Project]) -> None:
         portrait_html = f'<div class="portrait-crop"><img src="{portrait.url}?v={ASSET_VERSION}" alt="Black and white portrait of Lemi Hadarau"></div>'
     else:
         portrait_html = '<div class="portrait-placeholder">Portrait image<br>to be added</div>'
-    featured = "\n".join(project_card(project) for project in projects[:5])
+    featured = "\n".join(project_card(project) for project in selected_home_projects(projects))
     body = f"""
 <section class="home-intro section">
   <h1 class="about-heading">About</h1>
