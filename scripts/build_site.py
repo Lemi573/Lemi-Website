@@ -16,7 +16,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECTS_ROOT = ROOT / "3 Projects"
 ABOUT_ROOT = ROOT / "1 About"
 CONTACT_FILE = ROOT / "4 Contact" / "Contact.txt"
-CV_FILE = ROOT / "2 CV" / "Lemi_Hadarau_CV.docx"
+CV_FILE = ROOT / "2 CV" / "Lemi_Hadarau_CV.pdf"
+CV_DOWNLOAD_FILE = ROOT / "assets" / "files" / "Lemi_Hadarau_CV.pdf"
 GENERATED_ASSETS = ROOT / "assets" / "generated"
 IMAGE_PIPELINE_VERSION = "image-pipeline-2"
 ASSET_VERSION = "mobile-about-links-1"
@@ -908,6 +909,12 @@ def cv_block(number: str, title: str, content: str, extra_class: str = "") -> st
 """
 
 
+def publish_cv_download() -> str:
+    CV_DOWNLOAD_FILE.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(CV_FILE, CV_DOWNLOAD_FILE)
+    return output_path_to_url(CV_DOWNLOAD_FILE)
+
+
 def build_cv() -> None:
     name = "Lemi Hadarau"
     qualification = "Registered Architect MRIAI"
@@ -915,6 +922,7 @@ def build_cv() -> None:
     licence = "Full driving licence"
     email = "lemuel_marius@yahoo.com"
     phone = "085 221 8018"
+    cv_download_url = publish_cv_download()
 
     experience = "".join([
         cv_timeline_item("2024", "Jun 2024 - Present", "Project Architect", "NODE Architecture, Dublin 2 · Full-time", [
@@ -1028,7 +1036,7 @@ def build_cv() -> None:
         <span><span class="cv-contact-icon cv-contact-icon-phone" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M6.5 3.2 4.3 5.4c-.7.7-.9 1.7-.5 2.6 2.4 4.9 6.3 8.8 11.2 11.2.9.4 1.9.2 2.6-.5l2.2-2.2c.5-.5.5-1.2 0-1.7l-3.1-3.1c-.4-.4-1.1-.5-1.6-.2l-1.8 1c-1.8-1.1-3.4-2.7-4.5-4.5l1-1.8c.3-.5.2-1.2-.2-1.6L8.2 3.2c-.5-.5-1.2-.5-1.7 0z"/></svg></span>{html.escape(phone)}</span>
       </p>
     </div>
-    <a class="cv-download" href="/2%20CV/{html.escape(CV_FILE.name)}" target="_blank" rel="noopener">Download CV</a>
+    <a class="cv-download" href="{html.escape(cv_download_url)}" target="_blank" rel="noopener">Download CV</a>
   </header>
   <div class="cv-layout">
     <aside class="cv-left-column">
