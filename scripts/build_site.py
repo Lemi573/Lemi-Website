@@ -20,7 +20,7 @@ CV_FILE = ROOT / "2 CV" / "Lemi_Hadarau_CV.pdf"
 CV_DOWNLOAD_FILE = ROOT / "assets" / "files" / "Lemi_Hadarau_CV.pdf"
 GENERATED_ASSETS = ROOT / "assets" / "generated"
 IMAGE_PIPELINE_VERSION = "image-pipeline-2"
-ASSET_VERSION = "mobile-about-links-1"
+ASSET_VERSION = "mobile-lightbox-swipe-1"
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 ENABLED_CATEGORIES = {"Commercial", "Retail", "Office Fit Out", "Public", "Residential"}

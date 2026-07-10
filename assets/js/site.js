@@ -127,6 +127,12 @@ function openLightbox(items, index) {
   const image = lightbox.querySelector("img");
   const useThumbs = document.body.classList.contains("lightbox-thumbs-prototype");
   let current = index;
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchLastX = 0;
+  let touchLastY = 0;
+  let touchTracking = false;
+  let touchMoved = false;
 
   function render() {
     if (useThumbs) {
@@ -149,6 +155,10 @@ function openLightbox(items, index) {
     image.removeAttribute("src");
     lightbox.querySelector(".lightbox-thumbs")?.remove();
     document.removeEventListener("keydown", onKeydown);
+    lightbox.removeEventListener("touchstart", onTouchStart);
+    lightbox.removeEventListener("touchmove", onTouchMove);
+    lightbox.removeEventListener("touchend", onTouchEnd);
+    lightbox.removeEventListener("touchcancel", onTouchCancel);
   }
 
   function move(delta) {
@@ -160,6 +170,48 @@ function openLightbox(items, index) {
     if (event.key === "Escape") close();
     if (event.key === "ArrowLeft") move(-1);
     if (event.key === "ArrowRight") move(1);
+  }
+
+  function shouldIgnoreSwipeTarget(target) {
+    return Boolean(target.closest?.("button, .lightbox-thumbs"));
+  }
+
+  function onTouchStart(event) {
+    if (event.touches.length !== 1 || shouldIgnoreSwipeTarget(event.target)) {
+      touchTracking = false;
+      return;
+    }
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
+    touchLastX = touchStartX;
+    touchLastY = touchStartY;
+    touchTracking = true;
+    touchMoved = false;
+  }
+
+  function onTouchMove(event) {
+    if (!touchTracking || event.touches.length !== 1) return;
+    touchLastX = event.touches[0].clientX;
+    touchLastY = event.touches[0].clientY;
+    const deltaX = touchLastX - touchStartX;
+    const deltaY = touchLastY - touchStartY;
+    if (Math.abs(deltaX) > 12 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+      touchMoved = true;
+      event.preventDefault();
+    }
+  }
+
+  function onTouchEnd() {
+    if (!touchTracking) return;
+    const deltaX = touchLastX - touchStartX;
+    const deltaY = touchLastY - touchStartY;
+    touchTracking = false;
+    if (!touchMoved || Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY) * 1.2) return;
+    move(deltaX < 0 ? 1 : -1);
+  }
+
+  function onTouchCancel() {
+    touchTracking = false;
   }
 
   function buildThumbs() {
@@ -197,6 +249,10 @@ function openLightbox(items, index) {
   lightbox.querySelector(".lightbox-close").onclick = close;
   lightbox.querySelector(".lightbox-prev").onclick = () => move(-1);
   lightbox.querySelector(".lightbox-next").onclick = () => move(1);
+  lightbox.addEventListener("touchstart", onTouchStart, { passive: true });
+  lightbox.addEventListener("touchmove", onTouchMove, { passive: false });
+  lightbox.addEventListener("touchend", onTouchEnd);
+  lightbox.addEventListener("touchcancel", onTouchCancel);
   lightbox.classList.add("open");
   lightbox.setAttribute("aria-hidden", "false");
   document.addEventListener("keydown", onKeydown);
